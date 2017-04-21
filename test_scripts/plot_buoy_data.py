@@ -11,6 +11,7 @@ from scipy.io import loadmat
 wave_dict = loadmat('SMHI_wave_33004_201002_201003.mat',squeeze_me=True)
 meteo_dict = loadmat('SMHI_meteo_55570_201002_201003.mat',squeeze_me=True)
 Tlowres_dict = loadmat('/media/cyrf0006/Seagate1TB/IOW/Titp_S1_p4std_10minAve.mat',squeeze_me=True)
+mooring_depth = 83
 
 # make a new dictionary with just dependent variables we want
 # (we handle the time variable separately, below)
@@ -38,67 +39,82 @@ wave_period['date_time'] = [matlab2datetime(tval) for tval in wave_dict['wave_ma
 wind_dir['date_time'] = [matlab2datetime(tval) for tval in meteo_dict['wind_matlabtime']]
 wind_mag['date_time'] = [matlab2datetime(tval) for tval in meteo_dict['wind_matlabtime']]
 T['date_time'] = [matlab2datetime(tval) for tval in Tlowres_dict['timeVec']]
+T['zVec'] = [mooring_depth-tval for tval in Tlowres_dict['habVec']]
 
-# plot with Pandas
-#DataFrame.plot(x=None, y=None, kind='line', ax=None, subplots=False, sharex=None, sharey=False, layout=None, figsize=None, use_index=True, title=None, grid=None, legend=True, style=None, logx=False, logy=False, loglog=False, xticks=None, yticks=None, xlim=None, ylim=None, rot=None, fontsize=None, colormap=None, table=False, yerr=None, xerr=None, secondary_y=False, sort_columns=False, **kwds)[source]
 
 ## -- Plot -- ##
-fig, axes = plt.subplots(nrows=6, ncols=1)
 
-# S0
-plt.axes(axes[0], rowspan=2)
-mycontourf = plt.contourf(T['date_time'], T['habVec'], T['Tbin'], 30, cmap=plt.cm.RdBu_r)
-mycontour = plt.contour(T['date_time'], T['habVec'], T['Tbin'], 10, colors='k')
-cl = plt.colorbar(mycontourf, orientation='horizontal')
+fig = plt.figure()
+ax1 = plt.subplot2grid((6, 1), (0, 0), rowspan=2)
+# AX1 - T contours
+ctf = plt.contourf(T['date_time'], T['zVec'], T['Tbin'], 30, cmap=plt.cm.RdBu_r)
+ct = plt.contour(T['date_time'], T['zVec'], T['Tbin'], 10, colors='k', linewidths=0.5)
+cax = plt.axes([0.91,0.67,0.02,0.2])
+plt.colorbar(ctf, cax=cax)
 plt.plot(grid=True)
-axes[0].set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
-axes[0].xaxis.label.set_visible(False)
-axes[0].tick_params(labelbottom='off')
+ax1.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
+ax1.xaxis.label.set_visible(False)
+ax1.tick_params(labelbottom='off')
+ax1.set_ylabel('Depth (m)')
+ax1.invert_yaxis()
+ax1.text(pd.Timestamp('2010-02-28 15:00:00'), 80, r'T ($\rm ^{\circ}C$)', horizontalalignment='left', verticalalignment='center', fontsize=14, color=[1,1,1])
 
-
-# S1 - Wind/wave direction
+# AX2 - Wind/wave direction
+ax2 = plt.subplot2grid((6, 1), (2, 0))
 df1 = pd.DataFrame(wind_dir)
 df2= pd.DataFrame(wave_dir)
 df1 = df1.set_index('date_time')
 df2 = df2.set_index('date_time')
-df1.plot(ax=axes[1], grid='on', label="winddir", legend=True)
-df2.plot(secondary_y=False, ax=axes[1], grid='on', label="wavedir", legend=True)
-axes[1].set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
-axes[1].set_ylabel('Angle (deg)')
-axes[1].xaxis.label.set_visible(False)
-axes[1].tick_params(labelbottom='off')
+df1.plot(ax=ax2, grid='on', label="winddir", legend=True)
+df2.plot(secondary_y=False, ax=ax2, grid='on', label="wavedir", legend=True)
+ax2.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
+ax2.set_ylabel('Dir')
+ax2.xaxis.label.set_visible(False)
+ax2.tick_params(labelbottom='off')
+ax2.legend([r'$\rm \theta_{wind}$', r'$\rm \theta_{wave}$'])
 
-#S2 - Wind mag.
+# AX3 - Wind mag.
+ax3 = plt.subplot2grid((6, 1), (3, 0))
 df = pd.DataFrame(wind_mag)
 df = df.set_index('date_time')
-df.plot(ax=axes[2], grid='on')
+df.plot(ax=ax3, grid='on')
 #XTICKS = axes[0].get_xticks()
-axes[2].set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00 '))
-axes[2].tick_params(labelbottom='off')
-axes[2].xaxis.label.set_visible(False)
-axes[2].set_ylabel('U_wind (m/s)')
+ax3.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00 '))
+ax3.tick_params(labelbottom='off')
+ax3.xaxis.label.set_visible(False)
+ax3.set_ylabel('m/s')
+ax3.legend([r'$\overline{U}$'])
 
 # S3 - Wave heights
+ax4 = plt.subplot2grid((6, 1), (4, 0))
 df = pd.DataFrame(wave_height)
 df = df.set_index('date_time')
-df.plot(ax=axes[3], grid='on')
+df.plot(ax=ax4, grid='on')
 #XTICKS = axes[0].get_xticks()
-axes[3].set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
-axes[3].tick_params(labelbottom='off')
-axes[3].xaxis.label.set_visible(False)
-axes[3].set_ylabel('H (m)')
+ax4.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
+ax4.tick_params(labelbottom='off')
+ax4.xaxis.label.set_visible(False)
+ax4.set_ylabel('m')
+ax4.legend([r'$\rm H_{max}$', r'$\rm H_{s}$'])
 
 #S4 - Wave period
+ax5 = plt.subplot2grid((6, 1), (5, 0))
 df = pd.DataFrame(wave_period)
 df = df.set_index('date_time')
-df.plot(ax=axes[4], grid='on')
+df.plot(ax=ax5, grid='on')
 #XTICKS = axes[0].get_xticks()
-axes[4].set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
-axes[4].tick_params(labelbottom='on')
-axes[4].set_ylabel('Period (s)')
-axes[4].set_xlabel('Time')
+ax5.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
+ax5.tick_params(labelbottom='on')
+ax5.set_ylabel('s')
+ax5.set_xlabel('Time')
+ax5.legend([r'$\rm \overline{T}_s$'])
 
 
 
-#plt.savefig('exercise-T-contour.png')
+fig.set_size_inches(w=6,h=7.5)
+#fig.tight_layout()
+fig_name = 'buoy_data.pdf'
+fig.savefig(fig_name)
+
+
 plt.show()
