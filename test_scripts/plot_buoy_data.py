@@ -10,7 +10,8 @@ from scipy.io import loadmat
 # of 1-element arrays.  squeeze_me=True fixes that.
 wave_dict = loadmat('SMHI_wave_33004_201002_201003.mat',squeeze_me=True)
 meteo_dict = loadmat('SMHI_meteo_55570_201002_201003.mat',squeeze_me=True)
-Tlowres_dict = loadmat('/media/cyrf0006/Seagate1TB/IOW/Titp_S1_p4std_10minAve.mat',squeeze_me=True)
+#Tlowres_dict = loadmat('/media/cyrf0006/Seagate1TB/IOW/Titp_S1_p4std_10minAve.mat',squeeze_me=True)
+Tlowres_dict = loadmat('/media/cyrf0006/Fred32/IOW/Titp_S1_p4std_10minAve.mat',squeeze_me=True)
 mooring_depth = 83
 
 # make a new dictionary with just dependent variables we want
@@ -26,13 +27,14 @@ T = { k: Tlowres_dict[k] for k in ['habVec', 'Tbin']}
 # (http://stackoverflow.com/questions/13965740/converting-matlabs-datenum-format-to-python)
 import pandas as pd
 import datetime as dt
+
 def matlab2datetime(matlab_datenum):
     day = dt.datetime.fromordinal(int(matlab_datenum))
     dayfrac = dt.timedelta(days=matlab_datenum%1) - dt.timedelta(days = 366)
     return day + dayfrac
 
 # convert Matlab time into list of python datetime objects and put in dictionary
-#wave_datetime = [matlab2datetime(tval) for tval in wave_time]
+# wave_datetime = [matlab2datetime(tval) for tval in wave_time]
 wave_height['date_time'] = [matlab2datetime(tval) for tval in wave_dict['wave_matlabtime']]
 wave_dir['date_time'] = [matlab2datetime(tval) for tval in wave_dict['wave_matlabtime']]
 wave_period['date_time'] = [matlab2datetime(tval) for tval in wave_dict['wave_matlabtime']]
@@ -68,22 +70,25 @@ df2 = df2.set_index('date_time')
 df1.plot(ax=ax2, grid='on', label="winddir", legend=True)
 df2.plot(secondary_y=False, ax=ax2, grid='on', label="wavedir", legend=True)
 ax2.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
-ax2.set_ylabel('Dir')
+ax2.set_ylim(85,365)
+ax2.set_ylabel(r'$\rm \theta$')
 ax2.xaxis.label.set_visible(False)
 ax2.tick_params(labelbottom='off')
 ax2.legend([r'$\rm \theta_{wind}$', r'$\rm \theta_{wave}$'])
+plt.yticks([90, 180, 270, 360], ['E', 'S', 'W', 'N'], rotation='horizontal')
+
 
 # AX3 - Wind mag.
 ax3 = plt.subplot2grid((6, 1), (3, 0))
 df = pd.DataFrame(wind_mag)
 df = df.set_index('date_time')
-df.plot(ax=ax3, grid='on')
+df.plot(ax=ax3, grid='on', legend=False)
 #XTICKS = axes[0].get_xticks()
 ax3.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00 '))
 ax3.tick_params(labelbottom='off')
 ax3.xaxis.label.set_visible(False)
-ax3.set_ylabel('m/s')
-ax3.legend([r'$\overline{U}$'])
+ax3.set_ylabel(r'$\overline{U} (m/s)$')
+#ax3.legend([r'$\overline{U}$'])
 
 # S3 - Wave heights
 ax4 = plt.subplot2grid((6, 1), (4, 0))
@@ -94,20 +99,20 @@ df.plot(ax=ax4, grid='on')
 ax4.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
 ax4.tick_params(labelbottom='off')
 ax4.xaxis.label.set_visible(False)
-ax4.set_ylabel('m')
+ax4.set_ylabel('H(m)')
 ax4.legend([r'$\rm H_{max}$', r'$\rm H_{s}$'])
 
 #S4 - Wave period
 ax5 = plt.subplot2grid((6, 1), (5, 0))
 df = pd.DataFrame(wave_period)
 df = df.set_index('date_time')
-df.plot(ax=ax5, grid='on')
+df.plot(ax=ax5, grid='on', legend=False)
 #XTICKS = axes[0].get_xticks()
 ax5.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
 ax5.tick_params(labelbottom='on')
-ax5.set_ylabel('s')
+ax5.set_ylabel(r'$\rm \overline{T}_s (s)$')
 ax5.set_xlabel('Time')
-ax5.legend([r'$\rm \overline{T}_s$'])
+#ax5.legend([r'$\rm \overline{T}_s$'])
 
 
 
