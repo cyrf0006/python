@@ -1,9 +1,12 @@
+import os
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 #import scipy.io
 from scipy.io import loadmat
+import pandas as pd
+import datetime as dt
 
 # If you don't use squeeze_me = True, then Pandas doesn't like 
 # the arrays in the dictionary, because they look like an arrays
@@ -23,11 +26,17 @@ wind_dir = { k: meteo_dict[k] for k in ['wind_dir']}
 wind_mag = { k: meteo_dict[k] for k in ['wind_mag']}
 T = { k: Tlowres_dict[k] for k in ['habVec', 'Tbin']}
 
+# Wind data from R/V Alkor
+Alkor_dict = loadmat('/media/cyrf0006/Fred32/IOW/IOWdata/AL351_DDL_wind.mat',squeeze_me=True, struct_as_record=False)
+Ualkor =  Alkor_dict['DDL'].wind.speed.data
+yearday = Alkor_dict['DDL'].time.data
+pdTimeAlkor = pd.to_datetime('2010') + pd.to_timedelta(yearday - 1, unit='d')
+alkor = pd.DataFrame(Ualkor, index=pdTimeAlkor)
+alkor = alkor.resample('30Min').mean()
+
+
 ## ---- Datetime ----- ##
 # (http://stackoverflow.com/questions/13965740/converting-matlabs-datenum-format-to-python)
-import pandas as pd
-import datetime as dt
-
 def matlab2datetime(matlab_datenum):
     day = dt.datetime.fromordinal(int(matlab_datenum))
     dayfrac = dt.timedelta(days=matlab_datenum%1) - dt.timedelta(days = 366)
@@ -82,9 +91,10 @@ plt.yticks([90, 180, 270, 360], ['E', 'S', 'W', 'N'], rotation='horizontal')
 ax3 = plt.subplot2grid((6, 1), (3, 0))
 df = pd.DataFrame(wind_mag)
 df = df.set_index('date_time')
-df.plot(ax=ax3, grid='on', legend=False)
+df.plot(ax=ax3, grid='on', label="Uklip.", legend=True)
+alkor.plot(ax=ax3, grid='on', label="Ship", legend=True)
 #XTICKS = axes[0].get_xticks()
-ax3.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00 '))
+#ax3.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00 '))
 ax3.tick_params(labelbottom='off')
 ax3.xaxis.label.set_visible(False)
 ax3.set_ylabel(r'$\overline{U} (m/s)$')
@@ -116,10 +126,11 @@ ax5.set_xlabel('Time')
 
 
 
-fig.set_size_inches(w=6,h=7.5)
+fig.set_size_inches(w=6,h=6)
 #fig.tight_layout()
 fig_name = 'buoy_data.pdf'
 fig.savefig(fig_name)
+os.system('pdfcrop %s %s &> /dev/null &'%(fig_name, fig_name))
 
 
 plt.show()

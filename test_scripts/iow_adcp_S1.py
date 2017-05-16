@@ -164,8 +164,8 @@ Wlow = butter_lowpass_filter(WW.T, cutoff_low, fs_bin, order)
 fig = plt.figure()
 levels = np.linspace(-.2, .2, 8)
 XLIM = [pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 06:00:00')]
-time_zoom1 = pd.Timestamp('2010-03-01 12:00:00')
-time_zoom2 = pd.Timestamp('2010-03-02 00:00:00')
+time_zoom1 = pd.Timestamp('2010-03-02 03:00:00')
+time_zoom2 = pd.Timestamp('2010-03-02 09:00:00')
 rect_x = [time_zoom1, time_zoom2, time_zoom2, time_zoom1, time_zoom1]
 rect_y = [83, 83, 1, 1, 83]
 fig_name = 'S1_adcp.pdf'
@@ -182,6 +182,7 @@ ax1.invert_yaxis()
 ax1.xaxis.set_major_locator(days)
 ax1.xaxis.set_major_formatter(dfmt)
 ax1.xaxis.set_minor_locator(hours6)
+ax1.text(pd.Timestamp('2010-02-28 15:00:00'), 80, r'U ($\rm  $)', horizontalalignment='left', verticalalignment='center', fontsize=14, color=[1,1,1])
 
 
 ax2 = plt.subplot(5, 1, 2)
@@ -246,43 +247,9 @@ ax5.xaxis.set_major_formatter(dfmt)
 ax5.xaxis.set_minor_locator(hours6)
 
 
-
-
-## ax3 = plt.subplot(3, 1, 3)
-## levels = np.linspace(-.04, .04, 5)
-## c = plt.contourf(Ebin.index, Ebin.columns, Efilt, levels, cmap=plt.cm.RdBu, extend="both")
-## #c = plt.contourf(E.index, E.columns, Efilt, levels, cmap=plt.cm.RdBu, extend="both")
-## plt.colorbar(c)
-## #ax3.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
-## ax3.set_xlim(pd.Timestamp('2010-03-01 12:00:00'), pd.Timestamp('2010-03-02 12:00:00'))
-## ax3.set_ylim(0, 83)
-## ax3.tick_params(labelbottom='on')
-## ax3.set_ylabel(r'Depth (m)')
-## #ax3.set_xlabel('Time')
-## ax3.invert_yaxis()
-## #ax3.set_xticklabels(rotation=45)
-## ax3.xaxis.set_major_locator(days)
-## ax3.xaxis.set_major_formatter(dfmt)
-## #ax3.xaxis.set_minor_locator(hours1)
-
-
-## ax4 = plt.subplot(4, 1, 4)
-## c = plt.contourf(Ebin.index, Ebin.columns, Efilt, levels, cmap=plt.cm.RdBu, extend="both")
-## c = plt.contour(Ebin.index, Ebin.columns, Efilt, levels, colors='k', linewidth=0.1)
-## #c = plt.contourf(E.index, E.columns, Efilt, levels, cmap=plt.cm.RdBu, extend="both")
-## plt.colorbar(c)
-## ax4.set_xlim(pd.Timestamp('2010-03-01 14:00:00'), pd.Timestamp('2010-03-01 16:00:00'))
-## ax4.set_ylim(0, 83)
-## ax4.tick_params(labelbottom='on')
-## ax4.set_ylabel(r'Depth (m)')
-## #ax4.set_xlabel('Time')
-## ax4.invert_yaxis()
-## #ax4.set_xticklabels(rotation=45)
-## ax4.xaxis.set_major_locator(days)
-## ax4.xaxis.set_major_formatter(dfmt)
-## #ax4.xaxis.set_minor_locator(hours1)
-
-
+fig.set_size_inches(w=8, h=5)
+fig.set_dpi(150)
+fig.tight_layout()
 plt.subplots_adjust(hspace=0.35)
-plt.show()
 fig.savefig(fig_name)
+plt.show()
