@@ -17,14 +17,16 @@ XLIM2 = [pd.Timestamp('2010-03-01 21:00:00'), pd.Timestamp('2010-03-02 01:00:00'
 #XLIM3 = [pd.Timestamp('2010-03-01 11:45:00'), pd.Timestamp('2010-03-01 14:30:00')]
 XLIM3 = [pd.Timestamp('2010-03-01 12:00:00'), pd.Timestamp('2010-03-01 14:00:00')]
 XLIM4 = [pd.Timestamp('2010-03-01 21:15:00'), pd.Timestamp('2010-03-02 00:30:00')]
+XLIM5 = [pd.Timestamp('2010-03-01 12:28:00'), pd.Timestamp('2010-03-01 12:40:00')]
 
-fig_name = 'S1_onset3.png'
+fig_name = 'S1_onset4.png'
 YLIM = [19, 78]
 YLIM1 = [20, 77]
 YLIM2 = [20, 77]
 #YLIM3 = [56, 62]
 YLIM3 = [55, 61]
 YLIM4 = [56, 76]
+YLIM5 = [56, 60]
 
 #### ---------- Meto data --------- ####
 wave_dict = loadmat('SMHI_wave_33004_201002_201003.mat',squeeze_me=True)
@@ -149,6 +151,10 @@ hours1_4 = dates.HourLocator(interval=1)
 min15_4 = dates.MinuteLocator(interval=15)
 dfmt4 = dates.DateFormatter('%H:%M')
 
+min5 = dates.MinuteLocator(interval=2)
+dfmt5 = dates.DateFormatter('%H:%M')
+
+
 #### ---- Function to plot zooming boxes ---- #####
 from matplotlib.patches import Rectangle
 
@@ -185,7 +191,7 @@ fig = plt.figure(1)
 fig.subplots_adjust(hspace=.25)
 
 ## AX1 - Velocity full
-ax1 = plt.subplot2grid((3, 2), (0, 0), rowspan=1, colspan=2)
+ax1 = plt.subplot2grid((4, 2), (0, 0), rowspan=1, colspan=2)
 levels = np.linspace(-.005, .005, 11)
 c = plt.contourf(Wbin.index, Wbin.columns, Whigh, levels, cmap=plt.cm.RdBu_r, extend="both")
 levels2 = np.linspace(2,10, 5)
@@ -198,7 +204,7 @@ ax1.invert_yaxis()
 ax1.xaxis.set_major_locator(hours2)
 ax1.xaxis.set_major_formatter(dfmt)
 ax1.set_xlim(XLIM[0], XLIM[1])
-ax1.set_xlabel(XLIM[0].strftime('%d-%b-%Y'))
+ax1.set_title(XLIM[0].strftime('%d-%b-%Y'))
 ## # Add dashed rectangle for zoom
 start1 = mdates.date2num(XLIM1[0])
 end1 = mdates.date2num(XLIM1[1])
@@ -213,7 +219,7 @@ ax1.plot(rect2_x, rect2_y, '--', color='deeppink', linewidth=2)
 ax1.text(XLIM[0], YLIM[1], "a  ", horizontalalignment='right', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
 
 ## AX11 - Velocity ZOOM 1
-ax11 = plt.subplot2grid((3, 2), (1, 0), rowspan=1, colspan=1)
+ax11 = plt.subplot2grid((4, 2), (1, 0), rowspan=1, colspan=1)
 levels = np.linspace(-.005, .005, 11)
 c = plt.contourf(Wbin.index, Wbin.columns, Whigh, levels, cmap=plt.cm.RdBu_r, extend="both")
 ct = plt.contour(Tbin.index, Tbin.columns, Tbin.T, levels2, colors='k', linewidth=0.05, alpha=0.6)
@@ -240,7 +246,7 @@ ax11.text(XLIM1[0], YLIM1[1], "b  ", horizontalalignment='right', verticalalignm
 
 
 ## AX12 - Temperature Zoom
-ax12 = plt.subplot2grid((3, 2), (2, 0), rowspan=1, colspan=1)
+ax12 = plt.subplot2grid((4, 2), (2, 0), rowspan=1, colspan=1)
 levels3 = np.linspace(0,10, 21)
 c = plt.contourf(Tbin.index, Tbin.columns, Tbin.T, levels3, cmap=plt.cm.RdBu_r)
 ax12.set_xlim(XLIM3[0], XLIM3[1])
@@ -252,11 +258,16 @@ ax12.invert_yaxis()
 ax12.xaxis.set_major_locator(hours1_3)
 ax12.xaxis.set_major_formatter(dfmt3)
 ax12.xaxis.set_minor_locator(min15_3)
-ax12.text(XLIM3[0], YLIM3[1]*1.011, "d  ", horizontalalignment='right', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
-
+ax12.text(XLIM3[0], YLIM3[1]*1.011, "d    ", horizontalalignment='right', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
+## # Add dashed rectangle for zoom
+start5 = mdates.date2num(XLIM5[0])
+end5 = mdates.date2num(XLIM5[1])
+rect5_x = [start5, end5, end5, start5, start5]
+rect5_y = [YLIM5[1], YLIM5[1], YLIM5[0], YLIM5[0], YLIM5[1]]
+ax12.plot(rect5_x, rect5_y, '--', color='deeppink', linewidth=2)
 
 ## AX21 - Velocity ZOOM 2
-ax21 = plt.subplot2grid((3, 2), (1, 1), rowspan=1, colspan=1)
+ax21 = plt.subplot2grid((4, 2), (1, 1), rowspan=1, colspan=1)
 levels = np.linspace(-.005, .005, 11)
 c = plt.contourf(Wbin.index, Wbin.columns, Whigh, levels, cmap=plt.cm.RdBu_r, extend="both")
 ct = plt.contour(Tbin.index, Tbin.columns, Tbin.T, levels2, colors='k', linewidth=0.05, alpha=0.6)
@@ -279,13 +290,13 @@ ax21.plot(rect4_x, rect4_y, '--', color='deeppink', linewidth=2)
 ax21.text(XLIM2[0], YLIM2[1], "c  ", horizontalalignment='right', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
 
 # Colorbar for velocity
-ax21.text(XLIM2[1], -35.5, r" $\rm W' ( m s^{-1})$", horizontalalignment='left', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
-cax = plt.axes([0.91,0.39,0.014,0.4])
+ax21.text(XLIM2[1], -48, r" $\rm W' ( m s^{-1})$", horizontalalignment='left', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
+cax = plt.axes([0.91,0.52,0.014,0.32])
 plt.colorbar(c, cax=cax, ticks=[-.005, -.003, -.001, .001, .003, .005])
 
 
 ## AX22 - Temperature Zoom
-ax22 = plt.subplot2grid((3, 2), (2, 1), rowspan=1, colspan=1)
+ax22 = plt.subplot2grid((4, 2), (2, 1), rowspan=1, colspan=1)
 c = plt.contourf(Tbin.index, Tbin.columns, Tbin.T, levels3, cmap=plt.cm.RdBu_r)
 ax22.set_xlim(XLIM4[0], XLIM4[1])
 ax22.set_ylim(YLIM4[0], YLIM4[1])
@@ -298,17 +309,30 @@ ax22.xaxis.set_major_formatter(dfmt4)
 ax22.xaxis.set_minor_locator(min15_4)
 ax22.text(XLIM4[0], YLIM4[1]*1.02, "e  ", horizontalalignment='right', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
 
+## AX3 - Soliton
+ax3 = plt.subplot2grid((4, 2), (3, 0), rowspan=1, colspan=2)
+levels4 = np.linspace(0,10, 41)
+c = plt.contourf(Tbin.index, Tbin.columns, Tbin.T, levels4, cmap=plt.cm.RdBu_r)
+ax3.set_xlim(XLIM5[0], XLIM5[1])
+ax3.set_ylim(YLIM5[0], YLIM5[1])
+ax3.tick_params(labelbottom='on')
+ax3.set_ylabel(r'Depth (m)')
+ax3.invert_yaxis()
+ax3.xaxis.set_major_locator(min5)
+ax3.xaxis.set_major_formatter(dfmt5)
+ax3.text(XLIM5[0], YLIM5[1]*1.01, "f    ", horizontalalignment='right', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
 
 # Colorbar for temperature
 ax22.text(XLIM4[1], 58, r" $\rm T(^{\circ}C)$", horizontalalignment='left', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
-cax = plt.axes([0.91,0.11,0.014,0.18])
-plt.colorbar(c, cax=cax, ticks=np.linspace(2,10, 5))
+cax = plt.axes([0.91,0.13,0.014,0.3])
+plt.colorbar(c, cax=cax, ticks=np.linspace(0,10, 6))
 
 # Zoom boxes
 zoomingBox(ax1, [rect1_x[0], rect1_x[1], rect1_y[0], rect1_y[1]], ax11, color='deeppink')
 zoomingBox(ax1, [rect2_x[0], rect2_x[1], rect2_y[0], rect2_y[1]], ax21, color='deeppink')
 zoomingBox(ax11, [rect3_x[0], rect3_x[1], rect3_y[0], rect3_y[1]], ax12, color='deeppink')
 zoomingBox(ax21, [rect4_x[0], rect4_x[1], rect4_y[0], rect4_y[1]], ax22, color='deeppink')
+zoomingBox(ax12, [rect5_x[0], rect5_x[1], rect5_y[0], rect5_y[1]], ax3, color='deeppink')
 
 #### ---- Save Figure ---- ####
 fig.set_size_inches(w=9, h=9)

@@ -189,8 +189,9 @@ ax0.set_ylim(0,20)
 ax0.tick_params('y', colors='b')
 plt.grid()
 #plt.plot([storm, storm], [0, 20], '--k')
-plt.plot([storm2, storm2], [0, 20], '--k')
+#plt.plot([storm2, storm2], [0, 20], '--k')
 ax0.text(XLIM[1], 15, 'a  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
+
 
 ax01 = ax0.twinx()
 df2 = pd.DataFrame(wave_height)
@@ -205,9 +206,17 @@ ax01.set_ylabel(r'$\rm H_s (m)$', color='r')
 ax01.set_ylim(0,5)
 ax01.xaxis.label.set_visible(False)
 ax01.tick_params('y', colors='r')
-#ax0.plot([storm, storm], [18, 83], '--k')
-plt.plot([storm2, storm2], [18, 83], '--k')
-
+# add patch
+import matplotlib.dates as mdates
+zoomx = [pd.Timestamp('2010-03-01 11:00:00'), pd.Timestamp('2010-03-02 1:45:00')]
+start = mdates.date2num(zoomx[0])
+end = mdates.date2num(zoomx[1])
+rect_x = [start, end, end, start, start]
+zoomy = [0, 20]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax01.add_patch(Rgon)
 
 levels = np.linspace(-.15, .15, 9)
 # E_near
@@ -224,8 +233,14 @@ ax1.xaxis.set_major_formatter(dfmt)
 ax1.xaxis.set_minor_locator(hours6)
 ax1.text(XLIM[0], 75, r'  $\rm U_{near} ( m s^{-1})$', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
 #ax1.plot([storm, storm], [18, 83], '--k')
-ax1.plot([storm2, storm2], [18, 83], '--k')
+#ax1.plot([storm2, storm2], [18, 83], '--k')
+# add patch
 ax1.text(XLIM[1], 25, 'b  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
+zoomy = [19, 83]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax1.add_patch(Rgon)
 
 #N_near
 ax2 = plt.subplot2grid((9, 9), (3, 0), rowspan=2, colspan=8)
@@ -241,8 +256,11 @@ ax2.xaxis.set_major_formatter(dfmt)
 ax2.xaxis.set_minor_locator(hours6)
 ax2.text(XLIM[0], 75, r'  $\rm V_{near} ( m s^{-1})$', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
 #ax2.plot([storm, storm], [18, 83], '--k')
-ax2.plot([storm2, storm2], [18, 83], '--k')
+#ax2.plot([storm2, storm2], [18, 83], '--k')
 ax2.text(XLIM[1], 25, 'c  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
+# add patch
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax2.add_patch(Rgon)
 
 ## cax = plt.axes([0.9,0.5,0.01,0.35]) # One colorbar for bpoth plots
 ## plt.colorbar(c, cax=cax, format='%.2f')
@@ -262,8 +280,11 @@ ax3.xaxis.set_major_formatter(dfmt)
 ax3.xaxis.set_minor_locator(hours6)
 ax3.text(XLIM[0], 75, r'  $\rm U_{sub} ( m s^{-1})$', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
 #ax3.plot([storm, storm], [18, 83], '--k')
-ax3.plot([storm2, storm2], [18, 83], '--k')
+#ax3.plot([storm2, storm2], [18, 83], '--k')
 ax3.text(XLIM[1], 25, 'd  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
+# add patch
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax3.add_patch(Rgon)
 
 #N_sub
 ax4 = plt.subplot2grid((9, 9), (7, 0), rowspan=2, colspan=8)
@@ -279,8 +300,11 @@ ax4.xaxis.set_major_formatter(dfmt)
 ax4.xaxis.set_minor_locator(hours6)
 ax4.text(XLIM[0], 75, r'  $\rm V_{sub} ( m s^{-1})$', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
 #ax4.plot([storm, storm], [18, 83], '--k')
-ax4.plot([storm2, storm2], [18, 83], '--k')
+#ax4.plot([storm2, storm2], [18, 83], '--k')
 ax4.text(XLIM[1], 25, 'e  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
+# add patch
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax4.add_patch(Rgon)
 
 
 cax = plt.axes([0.9,0.1,0.02,0.7]) # One colorbar for all plots

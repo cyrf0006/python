@@ -66,6 +66,12 @@ ADCP = { k: ADCP_dict[k] for k in ['SerNmmpersec', 'SerEmmpersec', 'SerVmmpersec
 E = ADCP_dict['SerEmmpersec']/1000.0 # now in cm/s
 N = ADCP_dict['SerNmmpersec']/1000.0
 W = ADCP_dict['SerVmmpersec']/1000.0
+echo1 = ADCP_dict['SerEA1cnt'] # now in cm/s
+echo2 = ADCP_dict['SerEA1cnt'] # now in cm/s
+echo3 = ADCP_dict['SerEA1cnt'] # now in cm/s
+echo4 = ADCP_dict['SerEA1cnt'] # now in cm/s
+
+
 
 # time vector (Using datetime)
 ADCPtime_list = []
@@ -150,8 +156,7 @@ Whigh = butter_highpass_filter(WW.T, cutoff_high, fs_bin, order)
 #### --------------------------------- ###
 
 #### ----- shear calculation --------- ####
-
-def shear(z, u, v=0):
+def shear(z, u, v=None):
     """
     Shear calculation
     z: numpy array of length n
@@ -160,23 +165,54 @@ def shear(z, u, v=0):
     shr[0] = shear (S[s^-1])
     shr[1] = corresponding nx1 depth vector
     """
-
+    
+    if v is None: # fill with zeros if no 'v'
+        v = np.zeros(u.shape)
+                     
     if u.shape[0] != z.size:
         u = u.T # transpose if needed
         v = v.T
-
+    
     m = z.size
     iup = np.arange(0, m - 1)
     ilo = np.arange(1, m)
     z_ave = (z[iup] + z[ilo]) / 2.
 
-    z = np.tile(np.matrix(z).T, (1, u.shape[1]))
-    du = np.diff(u, axis=0)   
-    dv = np.diff(u, axis=0)   
+    if u.size != z.size: # multi-dimensional   
+        z = np.tile(np.matrix(z).T, (1, u.shape[1]))
+        
+    du = np.diff(u, axis=0)
+    dv = np.diff(u, axis=0)
     dz = np.diff(z, axis=0)
-
     shr = np.abs(du/dz) + np.abs(dv/dz)
     return shr, z_ave
+
+## def shear(z, u, v=0):
+##     """
+##     Shear calculation
+##     z: numpy array of length n
+##     u,v: matrices of size nxm or mxn
+
+##     shr[0] = shear (S[s^-1])
+##     shr[1] = corresponding nx1 depth vector
+##     """
+
+##     if u.shape[0] != z.size:
+##         u = u.T # transpose if needed
+##         v = v.T
+
+##     m = z.size
+##     iup = np.arange(0, m - 1)
+##     ilo = np.arange(1, m)
+##     z_ave = (z[iup] + z[ilo]) / 2.
+
+##     z = np.tile(np.matrix(z).T, (1, u.shape[1]))
+##     du = np.diff(u, axis=0)   
+##     dv = np.diff(v, axis=0)   
+##     dz = np.diff(z, axis=0)
+
+##     shr = np.abs(du/dz) + np.abs(dv/dz)
+##     return shr, z_ave
 
 UU = np.array(EE) # total shear
 VV = np.array(NN)
@@ -218,7 +254,7 @@ ax0.set_ylim(0,20)
 ax0.tick_params('y', colors='b')
 plt.grid()
 #plt.plot([storm, storm], [0, 20], '--k')
-plt.plot([storm2, storm2], [0, 20], '--k')
+#plt.plot([storm2, storm2], [0, 20], '--k')
 ax0.text(XLIM[1], 15, 'a  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
 
 ax01 = ax0.twinx()
@@ -235,7 +271,18 @@ ax01.set_ylim(0,5)
 ax01.xaxis.label.set_visible(False)
 ax01.tick_params('y', colors='r')
 #ax0.plot([storm, storm], [18, 83], '--k')
-plt.plot([storm2, storm2], [18, 83], '--k')
+#plt.plot([storm2, storm2], [18, 83], '--k')
+# add patch
+import matplotlib.dates as mdates
+zoomx = [pd.Timestamp('2010-03-01 11:00:00'), pd.Timestamp('2010-03-02 1:45:00')]
+start = mdates.date2num(zoomx[0])
+end = mdates.date2num(zoomx[1])
+rect_x = [start, end, end, start, start]
+zoomy = [0, 20]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax01.add_patch(Rgon)
 
 
 # W_high
@@ -255,8 +302,14 @@ ax1.xaxis.set_major_formatter(dfmt)
 ax1.xaxis.set_minor_locator(hours6)
 ax1.text(XLIM[0], 10, r"  $\rm W' ( m s^{-1})$", horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
 #ax1.plot([storm, storm], [18, 83], '--k')
-ax1.plot([storm2, storm2], [0, 88], '--k')
+#ax1.plot([storm2, storm2], [0, 88], '--k')
 ax1.text(XLIM[1], 10, 'b  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
+# add patch
+zoomy = [19,79]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.4)
+ax1.add_patch(Rgon)
 
 
 # W_high average
@@ -286,7 +339,7 @@ ax2.text(XLIM[0], 0.9, r"  $\rm <W'>_{(20-40m)}^2$", horizontalalignment='left',
 plt.grid()
 ax2.text(XLIM[1], .9, 'c  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
 #ax2.plot([storm, storm], [18, 83], '--k')
-ax2.plot([storm2, storm2], [0, 88], '--k')
+#ax2.plot([storm2, storm2], [0, 88], '--k')
 
 # S2
 ax3 = plt.subplot2grid((9, 9), (5, 0), rowspan=2, colspan=8)
@@ -307,10 +360,8 @@ ax3.xaxis.set_major_formatter(dfmt)
 ax3.xaxis.set_minor_locator(hours6)
 ax3.text(XLIM[0], 10, r'  $\rm log_{10}(S / s^{-1})$', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
 #ax3.plot([storm, storm], [18, 83], '--k')
-ax3.plot([storm2, storm2], [0, 88], '--k')
+#ax3.plot([storm2, storm2], [0, 88], '--k')
 ax3.text(XLIM[1], 10, 'd  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
-
-
 
 # epsilon
 EPS = pd.read_pickle('MSS_S1.pkl')

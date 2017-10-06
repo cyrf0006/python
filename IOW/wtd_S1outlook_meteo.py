@@ -159,6 +159,8 @@ days = dates.DayLocator()
 hours = dates.HourLocator(interval=6)
 dfmt = dates.DateFormatter('%d')
 storm2 = pd.Timestamp('2010-03-01 12:00:00') # onset langmuir
+zoomx = [pd.Timestamp('2010-03-01 11:00:00'), pd.Timestamp('2010-03-02 1:45:00')]
+zoomy = [19,78]
 
 fig = plt.figure(2)
 
@@ -180,7 +182,17 @@ ax1.xaxis.set_minor_locator(hours)
 ax1.set_ylabel(r'$\overline{U} (m/s)$')
 ax1.legend(['SMHI','ship'], bbox_to_anchor=(1., 1.), loc=2)
 ax1.text(XLIM[0], 15, '  a', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
-plt.plot([storm2, storm2], [0, 20], '--k')
+#plt.plot([storm2, storm2], [0, 20], '--k')
+# add patch
+import matplotlib.dates as mdates
+start = mdates.date2num(zoomx[0])
+end = mdates.date2num(zoomx[1])
+rect_x = [start, end, end, start, start]
+zoomy = [0, 20]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax1.add_patch(Rgon)
 
 # AX2 - Wave heights
 ax2 = plt.subplot2grid((7, 9), (1, 2), rowspan=1, colspan=6)
@@ -200,8 +212,13 @@ ax2.xaxis.set_minor_locator(hours)
 ax2.legend([r'$\rm H_{max}$', r'$\rm H_{s}$'], bbox_to_anchor=(1., 1.), loc=2)
 # bbox_to_anchor is origin; loc=1 is inside; bordaxesoad=0 means directly on the axis
 ax2.text(XLIM[0], 6, '  b', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
-plt.plot([storm2, storm2], [0, 7.5], '--k')
-
+#plt.plot([storm2, storm2], [0, 7.5], '--k')
+# add patch
+zoomy = [0, 7.5]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax2.add_patch(Rgon)
 
 # AX3 - Wind/wave direction
 ax3 = plt.subplot2grid((7, 9), (2, 2), rowspan=1, colspan=6)
@@ -224,7 +241,13 @@ ax3.xaxis.set_major_formatter(dfmt)
 ax3.xaxis.set_minor_locator(hours)
 plt.yticks([90, 180, 270, 360], ['E', 'S', 'W', 'N'], rotation='horizontal')
 ax3.text(XLIM[0], 340, '  c', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
-plt.plot([storm2, storm2], [85, 365], '--k')
+#plt.plot([storm2, storm2], [85, 365], '--k')
+# add patch
+zoomy = [0, 360]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax3.add_patch(Rgon)
 
 # AX4 - Wave period
 ax4 = plt.subplot2grid((7, 9), (3, 2), rowspan=1, colspan=6)
@@ -241,7 +264,13 @@ ax4.xaxis.set_major_locator(days)
 ax4.xaxis.set_major_formatter(dfmt)
 ax4.xaxis.set_minor_locator(hours)
 ax4.text(XLIM[0], 6, '  d', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
-plt.plot([storm2, storm2], [2, 7], '--k')
+#plt.plot([storm2, storm2], [2, 7], '--k')
+# add patch
+zoomy = [0, 7]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax4.add_patch(Rgon)
 
 # AX5 - Temperature
 ax5 = plt.subplot2grid((7, 9), (4, 2), rowspan=3, colspan=6)
@@ -249,24 +278,30 @@ levels = np.linspace(0,10, 21)
 levels2 = np.linspace(0,10, 11)
 c = plt.contourf(T.index, T.columns, T.T, levels, cmap=plt.cm.RdBu_r)
 #plt.plot([storm, storm], [53, 83], '--k')
-plt.plot([timemss1, timemss1], [30, 83], '--')
-plt.plot([timemss2, timemss2], [30, 83], '--')
-plt.plot([timemss5, timemss5], [30, 83], '--')
-plt.plot([storm2, storm2], [30, 83], '--k')
+plt.plot([timemss1, timemss1], [20, 83], '--')
+plt.plot([timemss2, timemss2], [20, 83], '--')
+plt.plot([timemss5, timemss5], [20, 83], '--')
+#plt.plot([storm2, storm2], [20, 83], '--k')
 cax = plt.axes([0.9,0.08,0.02,0.3])
 plt.colorbar(c, cax=cax)
 ax5.set_xlim(XLIM[0], XLIM[1])
 #ax5.set_ylim(1, 83)
-ax5.set_ylim(30, 83)
+ax5.set_ylim(20, 83)
 ax5.tick_params(labelbottom='on')
 ax5.tick_params(labelleft='off')
 ax5.invert_yaxis()
 ax5.xaxis.set_major_locator(days)
 ax5.xaxis.set_major_formatter(dfmt)
 ax5.xaxis.set_minor_locator(hours)
-ax5.text(XLIM[1], 35, r'  T($^{\circ}$C)', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
-ax5.text(XLIM[0], 33, '  e', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
-#ax5.grid()
+ax5.text(XLIM[1], 25, r'  T($^{\circ}$C)', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
+ax5.text(XLIM[0], 23, '  e', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+# add patch
+zoomy = [53, 83]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax5.add_patch(Rgon)
+
 
 # add rectangle
 ## import matplotlib.dates as mdates
@@ -298,14 +333,16 @@ ax6.semilogx(np.sqrt(N2_05), zN2_05)
 ax6.set_ylabel(r'Depth (m)')
 ax6.invert_yaxis()
 #ax6.set_ylim(1, 83)
-ax6.set_ylim(30, 83)
+#ax6.set_ylim(30, 83)
+ax6.set_ylim(20, 83)
 ax6.invert_yaxis()
 ax6.grid()
 ax6.legend(['28/02', '02/03', '04/03'], bbox_to_anchor=(0., 1.0), loc=3)
 ax6.set_xlabel(r'$\rm N (s^{-1})$')
 #ax6.set_xticks([1e0, 1e1, 1e2])
 ax6.set_xlim(3e-3, 1e-1)
-ax6.text(5e-2, 33, 'f', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+#ax6.set_xlim(1e-4, 1e-1)
+ax6.text(5e-2, 23, 'f', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
 
 #### --------- Save Figure ------------- ####
 fig.set_size_inches(w=8, h=10)
