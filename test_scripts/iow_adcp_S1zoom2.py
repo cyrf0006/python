@@ -20,8 +20,8 @@ fig_name = 'S1_adcp_toberename.pdf'
 #XLIM = [pd.Timestamp('2010-03-01 11:00:00'), pd.Timestamp('2010-03-01 14:00:00')]
 #XLIM = [pd.Timestamp('2010-03-02 03:00:00'), pd.Timestamp('2010-03-02 09:00:00')]
 
-XLIM = [pd.Timestamp('2010-03-02 04:00:00'), pd.Timestamp('2010-03-02 04:30:00')]
-XLIM2 = [pd.Timestamp('2010-03-02 04:05:00'), pd.Timestamp('2010-03-02 04:10:00')]
+XLIM = [pd.Timestamp('2010-03-02 03:00:00'), pd.Timestamp('2010-03-02 04:30:00')]
+XLIM2 = [pd.Timestamp('2010-03-02 03:25:00'), pd.Timestamp('2010-03-02 04:0:00')]
 
 
 cutoff_period_high = 1800.0  # desired cutoff in seconds (high-pass)

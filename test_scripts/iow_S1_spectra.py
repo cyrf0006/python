@@ -12,14 +12,15 @@ mab_adcp = 1.58
 mooring_depth = 83.0
 adcpdir = 'up'
 
-## XLIM = [pd.Timestamp('2010-02-28 17:00:00'), pd.Timestamp('2010-02-28 23:00:00')]
+#XLIM = [pd.Timestamp('2010-02-28 17:00:00'), pd.Timestamp('2010-02-28 23:00:00')]
 ## fig_name = 'S1_T_zoomPrestorm.pdf'
-
 #XLIM = [pd.Timestamp('2010-03-01 15:00:00'), pd.Timestamp('2010-03-01 21:00:00')]
 #fig_name = 'S1_T_zoomDeepening.pdf'
 
+#XLIM = [pd.Timestamp('2010-03-01 21:00:00'), pd.Timestamp('2010-03-02 09:00:00')]
 XLIM = [pd.Timestamp('2010-03-02 03:00:00'), pd.Timestamp('2010-03-02 09:00:00')]
-fig_name = 'S1_TWspectra_Mar02_3h.pdf'
+
+fig_name = 'S1_TWspectra_toberename.pdf'
 
 cutoff_period_high = 1800.0  # desired cutoff in seconds (high-pass)
 cutoff_period_low = 2.0*60*60 
@@ -29,8 +30,8 @@ cutoff_period_low = 2.0*60*60
 # If you don't use squeeze_me = True, then Pandas doesn't like 
 # the arrays in the dictionary, because they look like an arrays
 # of 1-element arrays.  squeeze_me=True fixes that.
-T_dict = loadmat('/media/cyrf0006/Fred32/IOW/Titp_S1_p4std_1sAve.mat',squeeze_me=True)
-ADCP_dict = loadmat('/media/cyrf0006/Fred32/IOW/IOWdata/adcp/IOWp01.mat',squeeze_me=True)
+T_dict = loadmat('./data/Titp_S1_p4std_1sAve.mat',squeeze_me=True)
+ADCP_dict = loadmat('./data/IOWp01.mat',squeeze_me=True)
 
 # Dict2Pandas
 T = T_dict['Tbin'].T
@@ -90,21 +91,27 @@ plt.show()
 # scipy.signal.welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None, detrend='constant', return_onesided=True, scaling='density', axis=-1)[source]
 from scipy import signal
 Tseries = np.array(T.iloc[:,35])
-Wseries = np.array(W.iloc[:,17])
+Wseries = np.array(W.iloc[:,42])
 Wseries[np.isnan(Wseries)] = 0
+Wseries27 = np.array(W.iloc[:,50])
+Wseries27[np.isnan(Wseries27)] = 0
 fs = 1/15.0
 f, Pxx_den = signal.welch(Tseries, fs, nperseg=256, detrend='linear')
 f2,Pxx_den2 = signal.welch(Wseries, fs, nperseg=256) 
+f3,Pxx_den3 = signal.welch(Wseries27, fs, nperseg=256) 
+## f, Pxx_den = signal.welch(Tseries, fs, nperseg=128, detrend='linear')
+## f2,Pxx_den2 = signal.welch(Wseries, fs, nperseg=128) 
+## f3,Pxx_den3 = signal.welch(Wseries27, fs, nperseg=128)
 
 fig = plt.figure(2)
 ax = plt.subplot(1,1,1)
 plt.semilogy(f, Pxx_den)
 plt.semilogy(f2, Pxx_den2)
+plt.semilogy(f3, Pxx_den3)
 #plt.ylim([0.5e-3, 1])
-plt.xlabel('frequency [Hz]')
 plt.ylabel('PSD [V**2/Hz]')
 ax.grid()
-plt.legend(['T','w'])
+plt.legend(['T','w_{60}', 'w_{35}'])
 plt.show()
 fig.savefig(fig_name)
 

@@ -12,12 +12,12 @@ mab_adcp = 1.58
 mooring_depth = 83.0
 adcpdir = 'up'
 
-fig_name = 'S1_TW_toberename.pdf'
 #XLIM = [pd.Timestamp('2010-03-01 15:30:00'), pd.Timestamp('2010-03-01 16:30:00')]
 
-#XLIM = [pd.Timestamp('2010-03-02 03:00:00'), pd.Timestamp('2010-03-02 06:00:00')]
-XLIM = [pd.Timestamp('2010-03-01 11:00:00'), pd.Timestamp('2010-03-01 14:00:00')]
-fig_name = 'S1_TW_toberename.pdf'
+#XLIM = [pd.Timestamp('2010-03-02 03:00:00'), pd.Timestamp('2010-03-02 05:00:00')]
+XLIM = [pd.Timestamp('2010-03-01 18:00:00'), pd.Timestamp('2010-03-01 21:00:00')]
+#XLIM = [pd.Timestamp('2010-03-01 11:00:00'), pd.Timestamp('2010-03-01 14:00:00')]
+fig_name = 'S1_TW_toberename.png'
 
 #XLIM = [pd.Timestamp('2010-03-02 03:00:00'), pd.Timestamp('2010-03-02 06:00:00')]
 #fig_name = 'S1_TW_zoom_IWs.pdf'
@@ -31,9 +31,10 @@ cutoff_period_low = 2.0*60*60
 # of 1-element arrays.  squeeze_me=True fixes that.
 #T_dict = loadmat('/media/cyrf0006/Seagate1TB/IOW/Titp_S1_p4std_10minAve.mat',squeeze_me=True)
 #ADCP_dict = loadmat('/media/cyrf0006/Seagate1TB/IOW/IOWdata/adcp/IOWp01.mat',squeeze_me=True)
-T_dict = loadmat('/media/cyrf0006/Fred32/IOW/Titp_S1_p4std_1sAve.mat',squeeze_me=True)
-ADCP_dict = loadmat('/media/cyrf0006/Fred32/IOW/IOWdata/adcp/IOWp01.mat',squeeze_me=True)
-
+#T_dict = loadmat('/media/cyrf0006/Fred32/IOW/Titp_S1_p4std_1sAve.mat',squeeze_me=True)
+#ADCP_dict = loadmat('/media/cyrf0006/Fred32/IOW/IOWdata/adcp/IOWp01.mat',squeeze_me=True)
+T_dict = loadmat('./data/Titp_S1_p4std_1sAve.mat',squeeze_me=True)
+ADCP_dict = loadmat('./data/IOWp01.mat',squeeze_me=True)
 
 ### --------- Using np arrays --------- ###
 def matlab2datetime(matlab_datenum):
@@ -102,11 +103,12 @@ Nbin = N.resample('60s').mean()
 Wbin = W.resample('60s').mean()
 Tbin = T.resample('1s').mean()
 fs = 1/2.0       # sample rate raw, Hz
-fs_bin = 1/10.0 # sample rate binned, Hz
+fs_bin = 1/60.0 # sample rate binned, Hz
 
 # Remove "barotropic" currents (MATRIX IS TRANSPOSED!)
 Ebin = Ebin.sub(Ebin.mean(axis=1), axis=0)
 Nbin = Nbin.sub(Nbin.mean(axis=1), axis=0)
+#Wbin = Wbin.sub(Wbin.mean(axis=1), axis=0)
 
 days = dates.DayLocator()
 min15 = dates.HourLocator(interval=1)
@@ -154,6 +156,28 @@ WW = np.nan_to_num(Wbin)
 
 Whigh = butter_highpass_filter(WW.T, cutoff_high, fs_bin, order)
 
+# Skewness
+Z = np.array(Wbin.columns)
+#idx = np.where(np.logical_and(Z>=20, Z<=40))
+idx = np.where(np.logical_and(Z>=55, Z<=65))
+w_ave = np.mean(Whigh[idx],axis=0)
+from scipy import stats
+print stats.skew(w_ave)  
+sk = stats.skew(w_ave) 
+
+nbins = 20
+n, bins = np.histogram(w_ave, nbins, density=1)
+pdfx = np.zeros(n.size)
+pdfy = np.zeros(n.size)
+for k in range(n.size):
+    pdfx[k] = 0.5*(bins[k]+bins[k+1])
+    pdfy[k] = n[k]
+
+plt.plot(pdfx, pdfy)
+plt.grid()
+plt.text(0,5, r'  $\rm \gamma = %f$' %sk, horizontalalignment='center', verticalalignment='center', fontsize=14, color='k')
+plt.show()
+
 
 #### --------- plots ---------- ####
 fig = plt.figure()
@@ -166,8 +190,8 @@ ct = plt.contour(Wbin.index, Wbin.columns, Whigh, [0.0,], colors='w', linewidths
 ct = plt.contourf(Wbin.index, Wbin.columns, Whigh, [-0.1, 0.0], cmap=plt.cm.binary_r, alpha=.3 )
 plt.colorbar(c)
 ax.set_xlim(XLIM[0], XLIM[1])
-#ax.set_ylim(53, 83)
-ax.set_ylim(55, 65)
+ax.set_ylim(53, 83)
+#ax.set_ylim(55, 65)
 ax.tick_params(labelbottom='on')
 ax.set_ylabel(r'Depth (m)')
 ax.set_xlabel(Wbin.index[1].strftime('%d-%b-%Y'))

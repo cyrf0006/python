@@ -18,12 +18,16 @@ adcpdir = 'up'
 #XLIM = [pd.Timestamp('2010-03-01 15:30:00'), pd.Timestamp('2010-03-01 16:30:00')]
 XLIM = [pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 06:00:00')]
 #fig_name = 'S1_outlook_wind.png'
-fig_name = 'S1_outlook_N2.eps'
+fig_name = 'S1_outlook_N2.png'
 
-#### ---------- Wind data --------- ####
+#### ---------- Meteo data --------- ####
 meteo_dict = loadmat('SMHI_meteo_55570_201002_201003.mat',squeeze_me=True)
+wave_dict = loadmat('SMHI_wave_33004_201002_201003.mat',squeeze_me=True)
 wind_dir = { k: meteo_dict[k] for k in ['wind_dir']}
 wind_mag = { k: meteo_dict[k] for k in ['wind_mag']}
+wave_height = { k: wave_dict[k] for k in ['waveheight_max','waveheight_signif']}
+wave_dir = { k: wave_dict[k] for k in ['wavedir_maxenergy']}
+wave_period= { k: wave_dict[k] for k in ['waveperiod_mean']}
 def matlab2datetime(matlab_datenum):
     day = datetime.datetime.fromordinal(int(matlab_datenum))
     dayfrac = datetime.timedelta(days=matlab_datenum%1) - datetime.timedelta(days = 366)
@@ -32,6 +36,9 @@ def matlab2datetime(matlab_datenum):
 # convert Matlab time into list of python datetime objects and put in dictionary
 wind_dir['date_time'] = [matlab2datetime(tval) for tval in meteo_dict['wind_matlabtime']]
 wind_mag['date_time'] = [matlab2datetime(tval) for tval in meteo_dict['wind_matlabtime']]
+wave_height['date_time'] = [matlab2datetime(tval) for tval in wave_dict['wave_matlabtime']]
+wave_dir['date_time'] = [matlab2datetime(tval) for tval in wave_dict['wave_matlabtime']]
+wave_period['date_time'] = [matlab2datetime(tval) for tval in wave_dict['wave_matlabtime']]
 
 # Wind data from R/V Alkor
 #Alkor_dict = loadmat('/media/cyrf0006/Fred32/IOW/IOWdata/AL351_DDL_wind.mat',squeeze_me=True, struct_as_record=False)
@@ -87,16 +94,6 @@ T_dict = loadmat('./data/Titp_S1_p4std_10minAve.mat',squeeze_me=True)
 T = T_dict['Tbin'].T
 zVecT = mooring_depth - np.array(T_dict['habVec'])
 pdTimeT = pd.date_range('2010-02-28 11:07:00', '2010-03-04 07:37:00', freq='10min')
-
-# add fake temperature above mooring (comment to ignore)
-## zVecT = np.append(Pbin[52],zVecT)
-## zVecT = np.append(Pbin[1],zVecT)
-## #T0 = T[:,0]
-## T1 = np.empty(pdTimeT.size)
-## T1.fill(Tbin[1])
-## T52 = np.empty(pdTimeT.size)
-## T52.fill(Tbin[52])
-## T = np.column_stack((T1,T1,T))
 
 # Dataframe
 T = pd.DataFrame(T, index=pdTimeT, columns=zVecT)
@@ -161,115 +158,161 @@ N2_period_05 = 60.0/swe.cph(N2_05)
 days = dates.DayLocator()
 hours = dates.HourLocator(interval=6)
 dfmt = dates.DateFormatter('%d')
+storm2 = pd.Timestamp('2010-03-01 12:00:00') # onset langmuir
+zoomx = [pd.Timestamp('2010-03-01 11:00:00'), pd.Timestamp('2010-03-02 1:45:00')]
+zoomy = [19,78]
 
 fig = plt.figure(2)
-ax0 = plt.subplot2grid((4, 9), (0, 2), rowspan=1, colspan=6)
-#ax0.plot(alkor) # WIND
-storm = pd.Timestamp('2010-03-01 12:00:00')
-#plt.plot([storm, storm], [0, 20], '--k')
-plt.plot([timemss1, timemss1], [0, 20], '--')
-plt.plot([timemss2, timemss2], [0, 20], '--')
-plt.plot([timemss5, timemss5], [0, 20], '--')
-ax0.plot(alkor, 'k') # WIND
-ax0.set_xlim(XLIM[0], XLIM[1])
-ax0.tick_params(labelbottom='off')
-ax0.xaxis.label.set_visible(False)
-ax0.xaxis.set_major_locator(days)
-ax0.xaxis.set_major_formatter(dfmt)
-ax0.xaxis.set_minor_locator(hours)
-ax0.set_ylabel(r'$\overline{U} (m s^{-1})$')
-ax0.set_ylim(0,20)
-plt.grid()
 
-## df = pd.DataFrame(wind_mag)
-## df = df.set_index('date_time')
-## df.plot(ax=ax0, grid='on', legend=False)
-## ax0.set_xlim(XLIM[0], XLIM[1])
-## ax0.tick_params(labelbottom='off')
-## ax0.xaxis.label.set_visible(False)
-## ax0.set_ylabel(r'$\overline{U} (m/s)$')
-## ax0.xaxis.set_major_locator(days)
-## ax0.xaxis.set_major_formatter(dfmt)
-## ax0.xaxis.set_minor_locator(hours)
 
-ax1 = plt.subplot2grid((4, 9), (1, 0), rowspan=3, colspan=2)
+# AX1 - Wind mag.
+ax1 = plt.subplot2grid((7, 9), (0, 2), rowspan=1, colspan=6)
+df = pd.DataFrame(wind_mag)
+df = df.set_index('date_time')
+df.plot(ax=ax1, grid='on', legend=False)
+alkor.plot(ax=ax1, grid='on', legend=False)
+#ax1.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 06:00:00 '))
+ax1.set_xlim(XLIM)
+ax1.set_ylim(0,20)
+ax1.tick_params(labelbottom='off')
+ax1.xaxis.label.set_visible(False)
+ax1.xaxis.set_major_locator(days)
+ax1.xaxis.set_major_formatter(dfmt)
+ax1.xaxis.set_minor_locator(hours)
+ax1.set_ylabel(r'$\overline{U} (m/s)$')
+ax1.legend(['SMHI','ship'], bbox_to_anchor=(1., 1.), loc=2)
+ax1.text(XLIM[0], 15, '  a', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+#plt.plot([storm2, storm2], [0, 20], '--k')
+# add patch
+import matplotlib.dates as mdates
+start = mdates.date2num(zoomx[0])
+end = mdates.date2num(zoomx[1])
+rect_x = [start, end, end, start, start]
+zoomy = [0, 20]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax1.add_patch(Rgon)
 
-# SIG
-## ax1.plot(SIG0_MSS_01, Z)
-## #ax1.plot(SIG0_MSS_02, Z)
-## #ax1.plot(SIG0_MSS_05, Z)
-## ax1.set_ylabel(r'Depth (m)')
-## ax1.invert_yaxis()
-## ax1.set_ylim(1, 83)
-## ax1.set_xlim(5, 14)
-## ax1.invert_yaxis()
-## ax1.grid()
-## ax1.legend(['28/02', '02/03', '04/03'])
-## ax1.set_xlabel(r'$\rm \sigma_0 (g kg^{-1})$')
+# AX2 - Wave heights
+ax2 = plt.subplot2grid((7, 9), (1, 2), rowspan=1, colspan=6)
+df = pd.DataFrame(wave_height)
+df = df.set_index('date_time')
+df.plot(ax=ax2, grid='on')
+#XTICKS = axes[0].get_xticks()
+#ax2.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 06:00:00'))
+ax2.set_xlim(XLIM)
+ax2.set_ylim(0,7.5)
+ax2.tick_params(labelbottom='off')
+ax2.xaxis.label.set_visible(False)
+ax2.set_ylabel('H(m)')
+ax2.xaxis.set_major_locator(days)
+ax2.xaxis.set_major_formatter(dfmt)
+ax2.xaxis.set_minor_locator(hours)
+ax2.legend([r'$\rm H_{max}$', r'$\rm H_{s}$'], bbox_to_anchor=(1., 1.), loc=2)
+# bbox_to_anchor is origin; loc=1 is inside; bordaxesoad=0 means directly on the axis
+ax2.text(XLIM[0], 6, '  b', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+#plt.plot([storm2, storm2], [0, 7.5], '--k')
+# add patch
+zoomy = [0, 7.5]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax2.add_patch(Rgon)
 
-# N2_period
-## ax1.semilogx(N2_period_01, zN2_01)
-## ax1.semilogx(N2_period_02, zN2_02)
-## ax1.semilogx(N2_period_05, zN2_05)
-## ax1.set_ylabel(r'Depth (m)')
-## ax1.invert_yaxis()
-## ax1.set_ylim(1, 83)
-## #ax1.set_xlim(0, 30)
-## ax1.invert_yaxis()
-## ax1.grid()
-## ax1.legend(['28/02', '02/03', '04/03'])
-## ax1.set_xlabel(r'$\rm T_N (min)$')
-## ax1.set_xticks([1e0, 1e1, 1e2])
+# AX3 - Wind/wave direction
+ax3 = plt.subplot2grid((7, 9), (2, 2), rowspan=1, colspan=6)
+df1 = pd.DataFrame(wind_dir)
+df2= pd.DataFrame(wave_dir)
+df1 = df1.set_index('date_time')
+df2 = df2.set_index('date_time')
+df1.plot(ax=ax3, grid='on', label="winddir", legend=True)
+df2.plot(secondary_y=False, ax=ax3, grid='on', label="wavedir", legend=True)
+#ax3.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 06:00:00'))
+ax3.set_xlim(XLIM)
+ax3.set_ylim(85,365)
+ax3.set_ylabel(r'$\rm \theta$')
+ax3.xaxis.label.set_visible(False)
+ax3.tick_params(labelbottom='off')
+#ax3.legend([r'$\rm \theta_{wind}$', r'$\rm \theta_{wave}$'], bbox_to_anchor=(-0.18, 0.8), loc=1, borderaxespad=0)
+ax3.legend([r'$\rm wind$', r'$\rm wave$'], bbox_to_anchor=(1., 1.), loc=2)
+ax3.xaxis.set_major_locator(days)
+ax3.xaxis.set_major_formatter(dfmt)
+ax3.xaxis.set_minor_locator(hours)
+plt.yticks([90, 180, 270, 360], ['E', 'S', 'W', 'N'], rotation='horizontal')
+ax3.text(XLIM[0], 340, '  c', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+#plt.plot([storm2, storm2], [85, 365], '--k')
+# add patch
+zoomy = [0, 360]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax3.add_patch(Rgon)
 
-# N2_period
-ax1.semilogx(np.sqrt(N2_01), zN2_01)
-ax1.semilogx(np.sqrt(N2_02), zN2_02)
-ax1.semilogx(np.sqrt(N2_05), zN2_05)
-ax1.set_ylabel(r'Depth (m)')
-ax1.invert_yaxis()
-ax1.set_ylim(1, 83)
-#ax1.set_xlim(0, 30)
-ax1.invert_yaxis()
-ax1.grid()
-ax1.legend(['28/02', '02/03', '04/03'])
-ax1.set_xlabel(r'$\rm N (s^{-1})$')
-#ax1.set_xticks([1e0, 1e1, 1e2])
-ax1.set_xlim(3e-3, 1e-1)
+# AX4 - Wave period
+ax4 = plt.subplot2grid((7, 9), (3, 2), rowspan=1, colspan=6)
+df = pd.DataFrame(wave_period)
+df = df.set_index('date_time')
+df.plot(ax=ax4, grid='on', legend=False)
+#ax4.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 06:00:00'))
+ax4.set_xlim(XLIM)
+ax4.set_ylim(2,7)
+ax4.xaxis.label.set_visible(False)
+ax4.tick_params(labelbottom='off')
+ax4.set_ylabel(r'$\rm \overline{T}_s (s)$')
+ax4.xaxis.set_major_locator(days)
+ax4.xaxis.set_major_formatter(dfmt)
+ax4.xaxis.set_minor_locator(hours)
+ax4.text(XLIM[0], 6, '  d', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+#plt.plot([storm2, storm2], [2, 7], '--k')
+# add patch
+zoomy = [0, 7]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax4.add_patch(Rgon)
 
-ax2 = plt.subplot2grid((4, 9), (1, 2), rowspan=3, colspan=6)
+# AX5 - Temperature
+ax5 = plt.subplot2grid((7, 9), (4, 2), rowspan=3, colspan=6)
 levels = np.linspace(0,10, 21)
 levels2 = np.linspace(0,10, 11)
 c = plt.contourf(T.index, T.columns, T.T, levels, cmap=plt.cm.RdBu_r)
 #plt.plot([storm, storm], [53, 83], '--k')
-plt.plot([timemss1, timemss1], [53, 83], '--')
-plt.plot([timemss2, timemss2], [53, 83], '--')
-plt.plot([timemss5, timemss5], [53, 83], '--')
-#ct = plt.contour(T.index, T.columns, T.T, levels2, colors='k', linewidth=0.1)
-cax = plt.axes([0.9,0.2,0.02,0.5])
+plt.plot([timemss1, timemss1], [20, 83], '--')
+plt.plot([timemss2, timemss2], [20, 83], '--')
+plt.plot([timemss5, timemss5], [20, 83], '--')
+#plt.plot([storm2, storm2], [20, 83], '--k')
+cax = plt.axes([0.9,0.08,0.02,0.3])
 plt.colorbar(c, cax=cax)
-#plt.colorbar(c)
-ax2.set_xlim(XLIM[0], XLIM[1])
-ax2.set_ylim(1, 83)
-ax2.tick_params(labelbottom='on')
-ax2.tick_params(labelleft='off')
-#ax2.set_ylabel(r'Depth (m)')
-ax2.invert_yaxis()
-ax2.xaxis.set_major_locator(days)
-ax2.xaxis.set_major_formatter(dfmt)
-ax2.xaxis.set_minor_locator(hours)
-ax2.text(XLIM[0], 75, r'  T($^{\circ}$C)', horizontalalignment='left', verticalalignment='center', fontsize=14, color='w')
-#ax2.grid()
+ax5.set_xlim(XLIM[0], XLIM[1])
+#ax5.set_ylim(1, 83)
+ax5.set_ylim(20, 83)
+ax5.tick_params(labelbottom='on')
+ax5.tick_params(labelleft='off')
+ax5.invert_yaxis()
+ax5.xaxis.set_major_locator(days)
+ax5.xaxis.set_major_formatter(dfmt)
+ax5.xaxis.set_minor_locator(hours)
+ax5.text(XLIM[1], 25, r'  T($^{\circ}$C)', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
+ax5.text(XLIM[0], 23, '  e', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+# add patch
+zoomy = [53, 83]
+rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
+rect = zip(rect_x, rect_y)
+Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
+ax5.add_patch(Rgon)
+
 
 # add rectangle
-import matplotlib.dates as mdates
-start = mdates.date2num(XLIM[0])
-end = mdates.date2num(XLIM[1])
-width = end - start
-rect_x = [start, end, end, start, start]
-rect_y = [0,0,52,52,0]
-rect = zip(rect_x, rect_y)
-Rgon = plt.Polygon(rect,color=np.multiply([1.0,1.0,1.0],.7), alpha=0.0, hatch='/')
-ax2.add_patch(Rgon)
+## import matplotlib.dates as mdates
+## start = mdates.date2num(XLIM[0])
+## end = mdates.date2num(XLIM[1])
+## width = end - start
+## rect_x = [start, end, end, start, start]
+## rect_y = [0,0,52,52,0]
+## rect = zip(rect_x, rect_y)
+## Rgon = plt.Polygon(rect,color=np.multiply([1.0,1.0,1.0],.7), alpha=0.0, hatch='/')
+## ax2.add_patch(Rgon)
 
 # add zoomed rectangle
 ## start = mdates.date2num(pd.Timestamp('2010-03-02 03:00:00'))
@@ -282,11 +325,32 @@ ax2.add_patch(Rgon)
 ## ax2.add_patch(Rgon2)
 
 
-fig.set_size_inches(w=8, h=5)
-fig.set_dpi(150)
+# AX6 - N2
+ax6 = plt.subplot2grid((7, 9), (4, 0), rowspan=3, colspan=2)
+ax6.semilogx(np.sqrt(N2_01), zN2_01)
+ax6.semilogx(np.sqrt(N2_02), zN2_02)
+ax6.semilogx(np.sqrt(N2_05), zN2_05)
+ax6.set_ylabel(r'Depth (m)')
+ax6.invert_yaxis()
+#ax6.set_ylim(1, 83)
+#ax6.set_ylim(30, 83)
+ax6.set_ylim(20, 83)
+ax6.invert_yaxis()
+ax6.grid()
+ax6.legend(['28/02', '02/03', '04/03'], bbox_to_anchor=(0., 1.0), loc=3)
+ax6.set_xlabel(r'$\rm N (s^{-1})$')
+#ax6.set_xticks([1e0, 1e1, 1e2])
+ax6.set_xlim(3e-3, 1e-1)
+#ax6.set_xlim(1e-4, 1e-1)
+ax6.text(5e-2, 23, 'f', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+
+#### --------- Save Figure ------------- ####
+fig.set_size_inches(w=8, h=10)
+fig.set_dpi(300)
 fig.tight_layout()
 fig.savefig(fig_name)
-plt.show()
+
+#plt.show()
 
 
 

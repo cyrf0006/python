@@ -10,15 +10,18 @@ import pandas as pd
 # Some infos:
 mooring_depth = 83.0
 
-#XLIM = [pd.Timestamp('2010-03-02 03:00:00'), pd.Timestamp('2010-03-02 09:00:00')]
-#XLIM = [pd.Timestamp('2010-03-02 4:30:00'), pd.Timestamp('2010-03-02 5:30:00')]
-#XLIM = [pd.Timestamp('2010-03-02 03:45:00'), pd.Timestamp('2010-03-02 05:30:00')]
+#XLIM = [pd.Timestamp('2010-03-02 03:00:00'), pd.Timestamp('2010-03-02 09:00:00')] # IWs
+#XLIM = [pd.Timestamp('2010-03-02 4:30:00'), pd.Timestamp('2010-03-02 5:30:00')] # IWs zoom
+#XLIM = [pd.Timestamp('2010-03-02 03:45:00'), pd.Timestamp('2010-03-02 05:30:00')] # IWs zoom (WTD pres)
 #XLIM = [pd.Timestamp('2010-03-01 12:00:00'), pd.Timestamp('2010-03-01 13:00:00')]
-XLIM = [pd.Timestamp('2010-03-01 12:15:00'), pd.Timestamp('2010-03-01 13:00:00')]
+XLIM = [pd.Timestamp('2010-03-01 12:15:00'), pd.Timestamp('2010-03-01 13:00:00')] # soliton
+#XLIM = [pd.Timestamp('2010-03-01 15:00:00'), pd.Timestamp('2010-03-01 18:00:00')]
+#XLIM = [pd.Timestamp('2010-03-01 23:00:00'), pd.Timestamp('2010-03-02 00:00:00')]
+
 fig_name = 'S1_Talone_toberename.png'
 
-#ZLIM = [53, 83]
-ZLIM = [55, 62]
+ZLIM = [53, 83]
+#ZLIM = [55, 62]
 
 #### ---- NIOZ thermostor chain ---- ####
 # If you don't use squeeze_me = True, then Pandas doesn't like the arrays in the dictionary

@@ -72,6 +72,7 @@ Wbin = W.resample('1Min').mean()
 # Remove "barotropic" currents (MATRIX IS TRANSPOSED!)
 Ebin = Ebin.sub(Ebin.mean(axis=1), axis=0)
 Nbin = Nbin.sub(Nbin.mean(axis=1), axis=0)
+#Wbin = Wbin.sub(Wbin.mean(axis=1), axis=0)
 
 # plot
 ## fig = plt.figure()
@@ -80,24 +81,6 @@ days = dates.DayLocator()
 hours6 = dates.HourLocator(interval=6)
 dfmt = dates.DateFormatter('%b %d')
 hours1 = dates.HourLocator(interval=1)
-
-## levels = np.linspace(-.3, .3, 7)
-
-## ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=1)
-## c = plt.contourf(Ebin.index, Ebin.columns, Ebin.T, levels, cmap=plt.cm.RdBu, extend="both")
-## plt.colorbar(c)
-## ax1.set_xlim(pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 12:00:00'))
-## ax1.set_ylim(0, 83)
-## ax1.tick_params(labelbottom='on')
-## ax1.set_ylabel(r'Depth (m)')
-## #ax1.set_xlabel('Time')
-## ax1.invert_yaxis()
-## #ax1.set_xticklabels(rotation=45)
-## ax1.xaxis.set_major_locator(days)
-## ax1.xaxis.set_major_formatter(dfmt)
-## ax1.xaxis.set_minor_locator(hours6)
-
-## plt.show()
 
 
 #### ------ filter timeseries ----- ####

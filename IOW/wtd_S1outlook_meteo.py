@@ -166,7 +166,7 @@ fig = plt.figure(2)
 
 
 # AX1 - Wind mag.
-ax1 = plt.subplot2grid((7, 9), (0, 2), rowspan=1, colspan=6)
+ax1 = plt.subplot2grid((7, 7), (0, 0), rowspan=1, colspan=6)
 df = pd.DataFrame(wind_mag)
 df = df.set_index('date_time')
 df.plot(ax=ax1, grid='on', legend=False)
@@ -195,7 +195,7 @@ Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
 ax1.add_patch(Rgon)
 
 # AX2 - Wave heights
-ax2 = plt.subplot2grid((7, 9), (1, 2), rowspan=1, colspan=6)
+ax2 = plt.subplot2grid((7, 7), (1, 0), rowspan=1, colspan=6)
 df = pd.DataFrame(wave_height)
 df = df.set_index('date_time')
 df.plot(ax=ax2, grid='on')
@@ -221,7 +221,7 @@ Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
 ax2.add_patch(Rgon)
 
 # AX3 - Wind/wave direction
-ax3 = plt.subplot2grid((7, 9), (2, 2), rowspan=1, colspan=6)
+ax3 = plt.subplot2grid((7, 7), (2, 0), rowspan=1, colspan=6)
 df1 = pd.DataFrame(wind_dir)
 df2= pd.DataFrame(wave_dir)
 df1 = df1.set_index('date_time')
@@ -250,7 +250,7 @@ Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
 ax3.add_patch(Rgon)
 
 # AX4 - Wave period
-ax4 = plt.subplot2grid((7, 9), (3, 2), rowspan=1, colspan=6)
+ax4 = plt.subplot2grid((7, 7), (3, 0), rowspan=1, colspan=6)
 df = pd.DataFrame(wave_period)
 df = df.set_index('date_time')
 df.plot(ax=ax4, grid='on', legend=False)
@@ -273,7 +273,7 @@ Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
 ax4.add_patch(Rgon)
 
 # AX5 - Temperature
-ax5 = plt.subplot2grid((7, 9), (4, 2), rowspan=3, colspan=6)
+ax5 = plt.subplot2grid((7, 7), (4, 0), rowspan=3, colspan=6)
 levels = np.linspace(0,10, 21)
 levels2 = np.linspace(0,10, 11)
 c = plt.contourf(T.index, T.columns, T.T, levels, cmap=plt.cm.RdBu_r)
@@ -281,68 +281,29 @@ c = plt.contourf(T.index, T.columns, T.T, levels, cmap=plt.cm.RdBu_r)
 plt.plot([timemss1, timemss1], [20, 83], '--')
 plt.plot([timemss2, timemss2], [20, 83], '--')
 plt.plot([timemss5, timemss5], [20, 83], '--')
+SBE_time = pd.Timestamp('2010-03-02 00:00:00')
+plt.plot([SBE_time, SBE_time], [20, 83], 'r--')
 #plt.plot([storm2, storm2], [20, 83], '--k')
-cax = plt.axes([0.9,0.08,0.02,0.3])
+cax = plt.axes([0.88,0.08,0.02,0.3])
 plt.colorbar(c, cax=cax)
 ax5.set_xlim(XLIM[0], XLIM[1])
 #ax5.set_ylim(1, 83)
-ax5.set_ylim(20, 83)
+ax5.set_ylim(53, 83)
 ax5.tick_params(labelbottom='on')
-ax5.tick_params(labelleft='off')
+ax5.tick_params(labelleft='on')
 ax5.invert_yaxis()
 ax5.xaxis.set_major_locator(days)
 ax5.xaxis.set_major_formatter(dfmt)
 ax5.xaxis.set_minor_locator(hours)
-ax5.text(XLIM[1], 25, r'  T($^{\circ}$C)', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
-ax5.text(XLIM[0], 23, '  e', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
+ax5.set_ylabel('Depth (m)')
+ax5.text(XLIM[1], 54, r'  T($^{\circ}$C)', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
+ax5.text(XLIM[0], 55, '  e', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
 # add patch
 zoomy = [53, 83]
 rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
 rect = zip(rect_x, rect_y)
 Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
 ax5.add_patch(Rgon)
-
-
-# add rectangle
-## import matplotlib.dates as mdates
-## start = mdates.date2num(XLIM[0])
-## end = mdates.date2num(XLIM[1])
-## width = end - start
-## rect_x = [start, end, end, start, start]
-## rect_y = [0,0,52,52,0]
-## rect = zip(rect_x, rect_y)
-## Rgon = plt.Polygon(rect,color=np.multiply([1.0,1.0,1.0],.7), alpha=0.0, hatch='/')
-## ax2.add_patch(Rgon)
-
-# add zoomed rectangle
-## start = mdates.date2num(pd.Timestamp('2010-03-02 03:00:00'))
-## end = mdates.date2num(pd.Timestamp('2010-03-02 09:00:00'))
-## rect_x = [start, end, end, start, start]
-## rect_y = [83, 83, 53, 53, 83]
-## rect = zip(rect_x, rect_y)
-## Rgon2 = plt.Polygon(rect, color='k', ls='--', lw=1, alpha=1, fill=False)
-## #Rgon = plt.Polygon(rect,color='none', edgecolor='red', facecolor="red", hatch='/')
-## ax2.add_patch(Rgon2)
-
-
-# AX6 - N2
-ax6 = plt.subplot2grid((7, 9), (4, 0), rowspan=3, colspan=2)
-ax6.semilogx(np.sqrt(N2_01), zN2_01)
-ax6.semilogx(np.sqrt(N2_02), zN2_02)
-ax6.semilogx(np.sqrt(N2_05), zN2_05)
-ax6.set_ylabel(r'Depth (m)')
-ax6.invert_yaxis()
-#ax6.set_ylim(1, 83)
-#ax6.set_ylim(30, 83)
-ax6.set_ylim(20, 83)
-ax6.invert_yaxis()
-ax6.grid()
-ax6.legend(['28/02', '02/03', '04/03'], bbox_to_anchor=(0., 1.0), loc=3)
-ax6.set_xlabel(r'$\rm N (s^{-1})$')
-#ax6.set_xticks([1e0, 1e1, 1e2])
-ax6.set_xlim(3e-3, 1e-1)
-#ax6.set_xlim(1e-4, 1e-1)
-ax6.text(5e-2, 23, 'f', horizontalalignment='left', verticalalignment='center', fontsize=15, color='k')
 
 #### --------- Save Figure ------------- ####
 fig.set_size_inches(w=8, h=10)
