@@ -123,6 +123,20 @@ cutoff_high = 1/(1800.0)  # desired cutoff frequency of the filter, Hz
 EE = np.nan_to_num(Ebin)
 NN = np.nan_to_num(Nbin)
 WW = np.nan_to_num(Wbin)
+
+# Flag data (mooring floatation)
+EE[:,0:5]=np.nan
+EE[:,25:30]=np.nan
+EE[:,-1]=np.nan
+NN[:,0:5]=np.nan
+NN[:,25:30]=np.nan
+NN[:,-1]=np.nan
+WW[:,0:5]=np.nan
+WW[:,25:30]=np.nan
+WW[:,-1]=np.nan
+
+
+
 Ehigh = butter_highpass_filter(EE.T, cutoff_high, fs_bin, order)
 Nhigh = butter_highpass_filter(NN.T, cutoff_high, fs_bin, order)
 Whigh = butter_highpass_filter(WW.T, cutoff_high, fs_bin, order)
@@ -190,9 +204,14 @@ def zoomingBox(ax1, roi, ax2, color='red', linewidth=2, roiKwargs={}, arrowKwarg
 fig = plt.figure(1)
 fig.subplots_adjust(hspace=.25)
 
+# -> Choose colorbar saturation
+#levels = np.linspace(-.005, .005, 11)
+levels = np.linspace(-.01, .01, 21)
+#levels = np.linspace(-.015, .015, 16)
+#levels = np.linspace(-.02, .02, 21)
+
 ## AX1 - Velocity full
 ax1 = plt.subplot2grid((4, 2), (0, 0), rowspan=1, colspan=2)
-levels = np.linspace(-.005, .005, 11)
 c = plt.contourf(Wbin.index, Wbin.columns, Whigh, levels, cmap=plt.cm.RdBu_r, extend="both")
 levels2 = np.linspace(2,10, 5)
 ct = plt.contour(Tbin.index, Tbin.columns, Tbin.T, levels2, colors='k', linewidth=0.05, alpha=0.6)
@@ -220,7 +239,6 @@ ax1.text(XLIM[0], YLIM[1], "a  ", horizontalalignment='right', verticalalignment
 
 ## AX11 - Velocity ZOOM 1
 ax11 = plt.subplot2grid((4, 2), (1, 0), rowspan=1, colspan=1)
-levels = np.linspace(-.005, .005, 11)
 c = plt.contourf(Wbin.index, Wbin.columns, Whigh, levels, cmap=plt.cm.RdBu_r, extend="both")
 ct = plt.contour(Tbin.index, Tbin.columns, Tbin.T, levels2, colors='k', linewidth=0.05, alpha=0.6)
 ax11.set_xlim(XLIM1[0], XLIM1[1])
@@ -268,7 +286,6 @@ ax12.plot(rect5_x, rect5_y, '--', color='deeppink', linewidth=2)
 
 ## AX21 - Velocity ZOOM 2
 ax21 = plt.subplot2grid((4, 2), (1, 1), rowspan=1, colspan=1)
-levels = np.linspace(-.005, .005, 11)
 c = plt.contourf(Wbin.index, Wbin.columns, Whigh, levels, cmap=plt.cm.RdBu_r, extend="both")
 ct = plt.contour(Tbin.index, Tbin.columns, Tbin.T, levels2, colors='k', linewidth=0.05, alpha=0.6)
 ax21.set_xlim(XLIM2[0], XLIM2[1])
@@ -292,7 +309,10 @@ ax21.text(XLIM2[0], YLIM2[1], "c  ", horizontalalignment='right', verticalalignm
 # Colorbar for velocity
 ax21.text(XLIM2[1], -48, r" $\rm W' ( m s^{-1})$", horizontalalignment='left', verticalalignment='center', fontsize=14, color='k', fontweight='bold')
 cax = plt.axes([0.91,0.52,0.014,0.32])
-plt.colorbar(c, cax=cax, ticks=[-.005, -.003, -.001, .001, .003, .005])
+#plt.colorbar(c, cax=cax, ticks=[-.005, -.003, -.001, .001, .003, .005])
+#plt.colorbar(c, cax=cax, ticks=[-.02, -.015, -.01, -.005, 0, .005, .01, .015, .02])
+#plt.colorbar(c, cax=cax, ticks=[-.015, -.005, .005, .015])
+plt.colorbar(c, cax=cax, ticks=[-.01, -.005, 0, .005, .01])
 
 
 ## AX22 - Temperature Zoom

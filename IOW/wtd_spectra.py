@@ -126,21 +126,28 @@ xmin_IW1 = 2.6e-3
 ymin_IW1 = [3e-2, 5e-1]
 xmin_IW2 = 8.5e-4
 ymin_IW2 = [6e-2, 5e-1]
+xmin_IW3 = 1/85.0
+ymin_IW3 = [1e-2, 2e-1]
 xmin_surf = 1.35e-1
 ymin_surf = [2e-2, 3e-1]
 
 
 fig = plt.figure(2)
 ax = plt.subplot(1,1,1)
-plt.loglog(f_W30, Pxx_den_W30)
-plt.loglog(f_W65, Pxx_den_W65, alpha=.8)
+#plt.loglog(f_W30, Pxx_den_W30)
+#plt.loglog(f_W65, Pxx_den_W65, alpha=.8)
 plt.loglog(f_T65, Pxx_den_T65, alpha=.8)
+plt.loglog(f_W30, Pxx_den_W30, alpha=.8)
+plt.loglog(f_W65, Pxx_den_W65, alpha=.8)
+
+
 #plt.loglog(f_W30s, Pxx_den_W30s)
 #plt.loglog(f_W70, Pxx_den_W70)
 #plt.loglog(f_W65, Pxx_den_W65)
 #plt.loglog(f_W30, Pxx_den_W30)
 plt.plot([xmin_IW1, xmin_IW1],ymin_IW1, '--k')
 plt.plot([xmin_IW2, xmin_IW2],ymin_IW2, '--k')
+plt.plot([xmin_IW3, xmin_IW3],ymin_IW3, '--k')
 plt.plot([xmin_surf, xmin_surf],ymin_surf, '--k')
 
 #plt.loglog(2*np.pi/(60.0*f_Whigh), Pxx_den_Whigh)
@@ -152,6 +159,7 @@ ax.grid()
 #plt.legend([r'$T_{65m}$', r'$W_{65m}$', r'$W_{30m}$'])
 plt.legend([r'$W_{30m}$', r'$W_{65m}$', r'$T_{65m}$'])
 plt.text(1.4e-1, 3e-1, '7s')
+plt.text(1/85.0, 2e-1, '85s')
 plt.text(2e-3, 7e-1, '6.4min')
 plt.text(5e-4, 7e-1, '20min')
 #plt.show()

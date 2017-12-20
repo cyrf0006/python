@@ -127,7 +127,7 @@ fig = plt.figure(2)
 
 
 # AX1 - T
-ax1 = plt.subplot2grid((1, 5), (0, 0), rowspan=1, colspan=1)
+ax1 = plt.subplot2grid((1, 11), (0, 0), rowspan=1, colspan=2)
 ax1.plot(CT_MSS_01, Pbin)
 ax1.plot(CT_MSS_02, Pbin)
 ax1.plot(CT_MSS_05, Pbin)
@@ -136,10 +136,11 @@ ax1.set_ylabel(r'Depth (m)')
 ax1.set_ylim(0, 85)
 ax1.invert_yaxis()
 ax1.set_xlabel(r'$\rm T (^{\circ}C)$')
+ax1.legend(['28/02 MSS', '02/03 MSS', '04/03 MSS', '02/03 SBE'])
 plt.text(1, 83, 'a', fontsize=14, fontweight='bold')
 
 # AX2 - S
-ax2 = plt.subplot2grid((1, 5), (0, 1), rowspan=1, colspan=1)
+ax2 = plt.subplot2grid((1, 11), (0, 2), rowspan=1, colspan=2)
 ax2.plot(SA_MSS_01, Pbin)
 ax2.plot(SA_MSS_02, Pbin)
 ax2.plot(SA_MSS_05, Pbin)
@@ -151,7 +152,7 @@ ax2.set_xlabel(r'$\rm S_A (g Kg^{-1})$')
 plt.text(7, 83, 'b', fontsize=14, fontweight='bold')
 
 # AX3 - Sigma0
-ax3 = plt.subplot2grid((1, 5), (0, 2), rowspan=1, colspan=1)
+ax3 = plt.subplot2grid((1, 11), (0, 4), rowspan=1, colspan=2)
 ax3.plot(SIG0_MSS_01, Pbin)
 ax3.plot(SIG0_MSS_02, Pbin)
 ax3.plot(SIG0_MSS_05, Pbin)
@@ -161,36 +162,89 @@ ax3.set_ylim(0, 85)
 ax3.set_yticklabels([])
 ax3.invert_yaxis()
 ax3.set_xlabel(r'$\rm \sigma_0 (Kg m^{-3})$')
-ax3.legend(['28/02 MSS', '02/03 MSS', '04/03 MSS', '02/03 SBE'])
+#ax3.legend(['28/02 MSS', '02/03 MSS', '04/03 MSS', '02/03 SBE'])
 plt.text(6, 83, 'c', fontsize=14, fontweight='bold')
 
 
+# AX6 - Annotation
+ax6 = plt.subplot2grid((1, 11), (0, 6), rowspan=1, colspan=1)
+ax6.annotate('Mixed layer',
+            xy=(0.0, .94),  # theta, radius
+            xytext=(0.4, .94),    # fraction, fraction
+            textcoords='axes fraction',
+            arrowprops=dict(arrowstyle='-[, widthB=2.7, lengthB=.8', lw=2),
+            horizontalalignment='left',
+            verticalalignment='center',
+            rotation=90
+            )
+
+ax6.annotate('Transition layer',
+            xy=(0.0, .68),  # theta, radius
+            xytext=(0.4, .68),    # fraction, fraction
+            textcoords='axes fraction',
+            arrowprops=dict(arrowstyle='-[, widthB=9.5, lengthB=.8', lw=2),
+            horizontalalignment='left',
+            verticalalignment='center',
+            rotation=90
+            )
+
+ax6.annotate('Halocline',
+            xy=(0.0, .35),  # theta, radius
+            xytext=(0.4, .35),    # fraction, fraction
+            textcoords='axes fraction',
+            arrowprops=dict(arrowstyle='-[, widthB=5.6, lengthB=.8', lw=2),
+            horizontalalignment='left',
+            verticalalignment='center',
+            rotation=90
+            )
+
+
+ax6.annotate('Bottom layer',
+            xy=(0.0, .1),  # theta, radius
+            xytext=(0.4, .1),    # fraction, fraction
+            textcoords='axes fraction',
+            arrowprops=dict(arrowstyle='-[, widthB=5, lengthB=.8', lw=2),
+            horizontalalignment='left',
+            verticalalignment='center',
+            rotation=90
+            )
+ax6.axis('off')
+
+
 # AX4 - N2
-ax4 = plt.subplot2grid((1, 5), (0, 3), rowspan=1, colspan=1)
-ax4.semilogx(N2_01, zN2_01)
-ax4.semilogx(N2_02, zN2_02)
-ax4.semilogx(N2_05, zN2_05)
-ax4.semilogx(N2_SBE, zN2_SBE, '-o')
+ax4 = plt.subplot2grid((1, 11), (0, 7), rowspan=1, colspan=2)
+## ax4.semilogx(N2_01, zN2_01)
+## ax4.semilogx(N2_02, zN2_02)
+## ax4.semilogx(N2_05, zN2_05)
+## ax4.semilogx(N2_SBE, zN2_SBE, '-o')
+ax4.semilogx(np.sqrt(N2_01), zN2_01)
+ax4.semilogx(np.sqrt(N2_02), zN2_02)
+ax4.semilogx(np.sqrt(N2_05), zN2_05)
+ax4.semilogx(np.sqrt(N2_SBE), zN2_SBE, '-o')
 ax4.invert_yaxis()
 ax4.grid()
-ax4.set_xlabel(r'$\rm N^2 (s^{-2})$')
+ax4.set_xlabel(r'$\rm N (s^{-1})$')
 ax4.set_ylim(0, 85)
-ax4.set_xlim(1e-7, 1e-2)
+#ax4.set_xlim(1e-7, 1e-2)
+ax4.set_xlim(8e-4, 1e-1)
 ax4.set_yticklabels([])
 ax4.invert_yaxis()
-plt.text(2e-7, 83, 'd', fontsize=14, fontweight='bold')
+#plt.text(2e-7, 83, 'd', fontsize=14, fontweight='bold')
+plt.text(1e-3, 83, 'd', fontsize=14, fontweight='bold')
 
 
 # AX5 - N2period
-ax5 = plt.subplot2grid((1, 5), (0, 4), rowspan=1, colspan=1)
+ax5 = plt.subplot2grid((1, 11), (0, 9), rowspan=1, colspan=2)
 ax5.plot(N2_period_01, zN2_01)
 ax5.plot(N2_period_02, zN2_02)
 ax5.plot(N2_period_05, zN2_05)
 ax5.semilogx(N2period_SBE, zN2_SBE, '-o')
 ax5.plot([6.4,6.4], [10,85], '--k', linewidth=0.5)
 ax5.plot([20, 20], [8,85], '--k', linewidth=0.5)
+ax5.plot([1.4, 1.4], [35,85], '--k', linewidth=0.5)
 plt.text(3, 9, '6.4min')
 plt.text(18, 7, '20min')
+plt.text(1.5, 34, '85s')
 #ax5.semilogx(N2_period_01, zN2_01)
 #ax5.semilogx(N2_period_02, zN2_02)
 #ax5.semilogx(N2_period_05, zN2_05)
@@ -204,9 +258,8 @@ ax5.invert_yaxis()
 plt.text(1.5, 83, 'e', fontsize=14, fontweight='bold')
 
 
-
 #### --------- Save Figure ------------- ####
-fig.set_size_inches(w=10, h=8)
+fig.set_size_inches(w=11, h=8)
 fig.set_dpi(300)
 fig.tight_layout()
 fig.savefig(fig_name)

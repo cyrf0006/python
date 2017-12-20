@@ -7,15 +7,21 @@ import numpy.ma as ma
 from scipy.io import loadmat
 import datetime
 import pandas as pd
+import gsw
+import SW_extras as swe
 
 # Some info
-fig_name = 'S1_highfreq.png'
-XLIM = [pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 06:00:00')]
+fig_name = 'S1_KE.png'
+#XLIM = [pd.Timestamp('2010-02-28 12:00:00'), pd.Timestamp('2010-03-04 06:00:00')]
+XLIM = [pd.Timestamp('2010-03-01 06:00:00'), pd.Timestamp('2010-03-02 12:00:00')]
 time_zoom1 = pd.Timestamp('2010-03-02 03:00:00')
 time_zoom2 = pd.Timestamp('2010-03-02 09:00:00')
 mab_adcp = 1.58
 mooring_depth = 83
 adcpdir = 'up'
+lat = 55
+lon = 16
+Pbin = np.arange(0.5, 85, 1)
 
 #### ---------- Wind data --------- ####
 wave_dict = loadmat('SMHI_wave_33004_201002_201003.mat',squeeze_me=True)
@@ -197,65 +203,20 @@ Wlow = butter_lowpass_filter(WW.T, cutoff_low, fs_bin, order)
 Ehigh = butter_highpass_filter(EE.T, cutoff_high, fs_bin, order)
 Nhigh = butter_highpass_filter(NN.T, cutoff_high, fs_bin, order)
 Whigh = butter_highpass_filter(WW.T, cutoff_high, fs_bin, order)
-#### --------------------------------- ###
+# --------------------------------- #
 
-#### ----- shear calculation --------- ####
-def shear(z, u, v=None):
-    """
-    Shear calculation
-    z: numpy array of length n
-    u,v: matrices of size nxm or mxn
-
-    shr[0] = shear (S[s^-1])
-    shr[1] = corresponding nx1 depth vector
-    """
-    
-    if v is None: # fill with zeros if no 'v'
-        v = np.zeros(u.shape)
-                     
-    if u.shape[0] != z.size:
-        u = u.T # transpose if needed
-        v = v.T
-    
-    m = z.size
-    iup = np.arange(0, m - 1)
-    ilo = np.arange(1, m)
-    z_ave = (z[iup] + z[ilo]) / 2.
-
-    if u.size != z.size: # multi-dimensional   
-        z = np.tile(np.matrix(z).T, (1, u.shape[1]))
-        
-    du = np.diff(u, axis=0)
-    dv = np.diff(u, axis=0)
-    dz = np.diff(z, axis=0)
-    shr = np.abs(du/dz) + np.abs(dv/dz)
-    return shr, z_ave
-
-
-UU = np.array(EE) # total shear
-VV = np.array(NN)
-## UU = np.array(Ehigh) # low freq. shear
-## VV = np.array(Nhigh)
-Z = np.array(Ebin.columns)
-
-## Check effect of flagging shear/velocity because of mooring floatation
-shr = shear(Z, UU, VV)
-## plt.figure()
-## plt.semilogx(shr[0].mean(axis=1), shr[1])
-## shr[0][0:6,:]=np.nan
-## shr[0][22:32,:]=np.nan
-## shr[0][-1,:]=np.nan
-## plt.semilogx(shr[0].mean(axis=1), shr[1], 'r')
-## plt.title('check effect of shear flagging')
-## plt.show()
-
-#### --------------------------------- ###
+#### -------- Calculate Kinetic Energy --------- ####
+K = .5*1010*(Ehigh**2 + Nhigh**2 + Whigh**2)
+#K = .5*1010*(Ehigh**2 + Nhigh**2)
+#K = .5*1010*(Whigh**2)
+K_df = pd.DataFrame(K.T, index=Ebin.index, columns=zVec)
+K_df = K_df.resample('30min').mean()
 
 
 #### ----------- plot ------------ ####
 days = dates.DayLocator()
 hours6 = dates.HourLocator(interval=6)
-dfmt = dates.DateFormatter('%b %d')
+dfmt = dates.DateFormatter('%H %M')
 hours1 = dates.HourLocator(interval=1)
 
 storm = pd.Timestamp('2010-03-01 6:00:00')
@@ -264,7 +225,7 @@ storm2 = pd.Timestamp('2010-03-01 12:00:00') # onset langmuir
 fig = plt.figure(2)
 
 # Wind
-ax0 = plt.subplot2grid((9, 9), (0, 0), rowspan=1, colspan=8)
+ax0 = plt.subplot2grid((4, 9), (0, 0), rowspan=1, colspan=8)
 df = pd.DataFrame(wind_mag)
 df = df.set_index('date_time')
 
@@ -311,128 +272,60 @@ rect = zip(rect_x, rect_y)
 Rgon = plt.Polygon(rect,color='gray', alpha=0.3)
 ax01.add_patch(Rgon)
 
-
-# W_high
-ax1 = plt.subplot2grid((9, 9), (1, 0), rowspan=2, colspan=8)
-levels = np.linspace(-.005, .005, 11)
-c = plt.contourf(Wbin.index, Wbin.columns, Whigh, levels, cmap=plt.cm.RdBu_r, extend="both")
-ct = plt.contour(T.index, T.columns, T.T, [4,], colors='k', lw=0.5)
-cax = plt.axes([0.89,0.7,0.01,0.15])
-plt.colorbar(c, cax=cax, ticks=[-.005, -.003, -.001, .001, .003, .005])
-ax1.set_xlim(XLIM[0], XLIM[1])
-ax1.set_ylim(0, 88)
-ax1.tick_params(labelbottom='off')
-ax1.set_ylabel(r'Depth (m)')
-ax1.invert_yaxis()
-ax1.xaxis.set_major_locator(days)
-ax1.xaxis.set_major_formatter(dfmt)
-ax1.xaxis.set_minor_locator(hours6)
-ax1.text(XLIM[0], 10, r"  $\rm W' (m s^{-1})$", horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
-#ax1.plot([storm, storm], [18, 83], '--k')
-#ax1.plot([storm2, storm2], [0, 88], '--k')
-ax1.text(XLIM[1], 10, 'b  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
-# add patch
-zoomy = [0,88]
-rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
-rect = zip(rect_x, rect_y)
-Rgon = plt.Polygon(rect,color='gray', alpha=0.4)
-ax1.add_patch(Rgon)
-
-
-# W_high average
-ax2 = plt.subplot2grid((9, 9), (3, 0), rowspan=2, colspan=8)
-idx = np.where(np.logical_and(Z>=20, Z<=40))
-w_ave = np.mean(Whigh[idx],axis=0)
-w_ave = w_ave**2
-
-# runmean
-def running_mean(x, N):
-    cumsum = np.cumsum(np.insert(x, 0, 0)) 
-    return (cumsum[N:] - cumsum[:-N]) / N
-N=30
-w_filt = running_mean(w_ave, N)
-time_wfilt = Ebin.index[N/2:-N/2+1]
-
-plt.plot(Ebin.index, w_ave*10000)
-plt.plot(time_wfilt, w_filt*10000)
-ax2.set_xlim(XLIM[0], XLIM[1])
-ax2.tick_params(labelbottom='off')
-ax2.xaxis.set_major_locator(days)
-ax2.xaxis.set_major_formatter(dfmt)
-ax2.xaxis.set_minor_locator(hours6)
-ax2.set_ylabel(r'$(m^2 s^{-2})\times 10^4$')
-ax2.set_ylim(0, 1)
-ax2.text(XLIM[0], 0.9, r"  $\rm <W'>_{(20-40m)}^2$", horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
-plt.grid()
-ax2.text(XLIM[1], .9, 'c  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
-#ax2.plot([storm, storm], [18, 83], '--k')
-#ax2.plot([storm2, storm2], [0, 88], '--k')
-# add patch
-zoomy = [0,1]
-rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
-rect = zip(rect_x, rect_y)
-Rgon = plt.Polygon(rect,color='gray', alpha=0.4)
-ax2.add_patch(Rgon)
-
-
-# S2
-ax3 = plt.subplot2grid((9, 9), (5, 0), rowspan=2, colspan=8)
-levels = np.linspace(-1.8, -0.4, 8)
-#levels = np.linspace(-1.6, -0.8, 5)
-c = plt.contourf(Ebin.index, shr[1], np.log10(shr[0]), levels, cmap=plt.cm.RdBu_r, extend="both", color='k')
+# KE
+ax3 = plt.subplot2grid((4, 9), (1, 0), rowspan=3, colspan=8)
+#levels = np.linspace(-2.4, 1, 21)
+#levels = np.linspace(-2.4, 1, 18)
+levels = np.linspace(-2.4, .8, 17)
+#levels = np.linspace(.3, 4, 61)
+#levels = 21
+c = plt.contourf(K_df.index, K_df.columns, np.log10(K_df.T), levels, extend="both", color='k')
+#c = plt.contourf(K_df.index, K_df.columns, K_df.T, levels, extend="both", color='k')
 ct = plt.contour(T.index, T.columns, T.T, [4,], colors='k', lw=0.5)
 #c = plt.contourf(Ebin.index, shr[1], np.log10(shr[0]), levels, cmap=plt.cm.Reds, extend="both")
-cax = plt.axes([0.89,0.27,0.01,0.15])
+cax = plt.axes([0.89,0.1,0.02,0.6])
 plt.colorbar(c, cax=cax)
 ax3.set_xlim(XLIM[0], XLIM[1])
-ax3.set_ylim(0, 88)
-ax3.tick_params(labelbottom='off')
+ax3.set_ylim(19, 70)
+ax3.tick_params(labelbottom='on')
 ax3.set_ylabel(r'Depth (m)')
 ax3.invert_yaxis()
-ax3.xaxis.set_major_locator(days)
+ax3.xaxis.set_major_locator(hours6)
 ax3.xaxis.set_major_formatter(dfmt)
-ax3.xaxis.set_minor_locator(hours6)
-ax3.text(XLIM[0], 10, r'  $\rm log_{10}(S / s^{-1})$', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
-#ax3.plot([storm, storm], [18, 83], '--k')
-#ax3.plot([storm2, storm2], [0, 88], '--k')
-ax3.text(XLIM[1], 10, 'd  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='k')
-# add patch
-zoomy = [0,88]
-rect_y = [zoomy[0], zoomy[0], zoomy[1], zoomy[1], zoomy[0]]
-rect = zip(rect_x, rect_y)
-Rgon = plt.Polygon(rect,color='gray', alpha=0.4)
-ax3.add_patch(Rgon)
+ax3.xaxis.set_minor_locator(hours1)
+ax3.text(XLIM[0], 23, r'  $\rm K_{IW}\,(J\,Kg^{-1})$', horizontalalignment='left', verticalalignment='center', fontsize=14, color='w')
+ax3.text(pd.Timestamp('2010-03-01 12:00:00'), 73, '1 March', horizontalalignment='center', verticalalignment='center', fontsize=12, color='k')
+ax3.text(pd.Timestamp('2010-03-02 06:00:00'), 73, '2 March', horizontalalignment='center', verticalalignment='center', fontsize=12, color='k')
+ax3.text(XLIM[1], 22, 'b  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='w')
+ax3.grid('on')
 
 
-# epsilon
-EPS = pd.read_pickle('MSS_S1.pkl')
+## Annotations
+ann_text_x = pd.Timestamp('2010-03-02 03:00:00')
+ann1_x = pd.Timestamp('2010-03-01 19:00:00')
+ann2_x = pd.Timestamp('2010-03-01 21:00:00')
+ann3_x = pd.Timestamp('2010-03-01 22:00:00')
+ann4_x = pd.Timestamp('2010-03-01 12:00:00')
+ann1_y = 25
+ann2_y = 40
+ann3_y = 55
+ann_text4_x = pd.Timestamp('2010-03-01 07:00:00')
+ann4_y = 60
 
-# Casts identifyer
-casts = np.ones(len(EPS.index))
-castsID = pd.DataFrame(casts, index=EPS.index) 
+ax3.annotate('Deepening\n IW energy', xy=(ann1_x, ann1_y), xytext=(ann_text_x, 25),
+            arrowprops=dict(facecolor='black', width=1, shrink=0.05), fontsize=14
+            )
+ax3.annotate('', xy=(ann2_x, ann2_y), xytext=(ann_text_x, 25),
+            arrowprops=dict(facecolor='black', width=1, shrink=0.05),
+            )
+ax3.annotate('', xy=(ann3_x, ann3_y), xytext=(ann_text_x, 25),
+            arrowprops=dict(facecolor='black', width=1, shrink=0.05),
+            )
+ax3.annotate('Large IW (Fig.6f)', xy=(ann4_x, ann4_y), xytext=(ann_text4_x, 52),
+            arrowprops=dict(facecolor='black', width=1, shrink=0.05), fontsize=14
+            )
 
-# resample data 
-EPS = EPS.resample('60Min').mean()
 
-ax4 = plt.subplot2grid((9, 9), (7, 0), rowspan=2, colspan=8)
-levels = np.linspace(-9.5,-6.5, 20)
-c = plt.contourf(EPS.index, EPS.columns, np.log10(np.transpose(EPS)), levels, cmap=plt.cm.RdBu_r, extend="both")
-cax = plt.axes([0.89,0.06,0.01,0.15])
-#plt.colorbar(c, cax=cax, ticks=[-10, -9, -8, -7, -6])
-plt.colorbar(c, cax=cax, ticks=[np.linspace(-9.5, -6.5, 7)])
-ax4.text(pd.Timestamp('2010-03-01 00:00:00'), 10, r'$\rm log_{10}(\epsilon / W Kg^{-1})$', horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
-ax4.set_ylabel(r'Depth (m)')
-ax4.set_xlim(XLIM)
-ax4.xaxis.set_major_locator(days)
-ax4.xaxis.set_major_formatter(dfmt)
-ax4.xaxis.set_minor_locator(hours6)
-ax4.set_ylim(0, 88)
-ax4.invert_yaxis()
-#ax4.plot([storm2, storm2], [0, 88], '--k')
-
-# Mark casts
-ax4.plot(castsID, '|', color=[.3,.3,.3])
-ax4.text(XLIM[1], 15, 'e  ', horizontalalignment='right', verticalalignment='center', fontsize=15, color='w')
 
 
 
