@@ -312,7 +312,7 @@ ann3_y = 55
 ann_text4_x = pd.Timestamp('2010-03-01 07:00:00')
 ann4_y = 60
 
-ax3.annotate('Deepening\n IW energy', xy=(ann1_x, ann1_y), xytext=(ann_text_x, 25),
+ax3.annotate('Deepening\n IW energy?', xy=(ann1_x, ann1_y), xytext=(ann_text_x, 25),
             arrowprops=dict(facecolor='black', width=1, shrink=0.05), fontsize=14
             )
 ax3.annotate('', xy=(ann2_x, ann2_y), xytext=(ann_text_x, 25),
@@ -321,7 +321,7 @@ ax3.annotate('', xy=(ann2_x, ann2_y), xytext=(ann_text_x, 25),
 ax3.annotate('', xy=(ann3_x, ann3_y), xytext=(ann_text_x, 25),
             arrowprops=dict(facecolor='black', width=1, shrink=0.05),
             )
-ax3.annotate('Large IW (Fig.6f)', xy=(ann4_x, ann4_y), xytext=(ann_text4_x, 52),
+ax3.annotate('Large IW (Fig.7f)', xy=(ann4_x, ann4_y), xytext=(ann_text4_x, 52),
             arrowprops=dict(facecolor='black', width=1, shrink=0.05), fontsize=14
             )
 

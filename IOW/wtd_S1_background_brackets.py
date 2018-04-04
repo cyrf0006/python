@@ -78,6 +78,19 @@ N2_01 = N2_MSS_01[0]
 zN2_01 = N2_MSS_01[1]
 N2_period_01 = 60.0/swe.cph(N2_01)
 
+# save sigma for Daniel
+from scipy import signal
+from astropy.io import ascii
+def average(arr, n):
+    end =  n * int(len(arr)/n)
+    return np.mean(arr[:end].reshape(-1, n), 1)
+SIG0_smooth = average(SIG0_MSS_01, 4)
+P_smooth = average(Pbin, 4)
+
+ascii.write([P_smooth, SIG0_smooth], 'sig0_4m.txt', names=['P', 'sig0'])
+ascii.write([Pbin, SIG0_MSS_01], 'sig0_1m.txt', names=['P', 'sig0'])
+
+
 MSS_S1_2_dict = loadmat('./data/MSS_DATA/S1_2.mat',squeeze_me=True, struct_as_record=False)
 Zmss =  MSS_S1_2_dict['CTD'][0].P
 Tmss =  MSS_S1_2_dict['CTD'][0].T
