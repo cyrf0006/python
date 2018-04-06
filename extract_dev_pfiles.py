@@ -1,37 +1,37 @@
 import glob
 import os
+import pandas as pd
+import numpy as np
+
+host = 'cyrf@nl-bpo-dev.ent.dfo-mpo.ca' 
+path = '/data/seabird'
+list_files = 'pfiles_and_time.list'
+list_files = 'test_allfiles.list'
+my_password = 'orwe123!'
+
+# DO NOT CALL NOW
+#get_list = "ssh -q cyrf@nl-bpo-dev.ent.dfo-mpo.ca 'find /data/seabird/* -type f -name *.p[1-2][0-9][0-9][0-9] -exec ls -l {} \;' > pfiles_and_time.list"
+get_list_command = "ssh -q " + host + " 'find " + path + "/* -type f -name *.p[1-2][0-9][0-9][0-9] -exec ls -l {} \;' > " + list_files
+os.system(get_list_command)
+
+d = []
+with open(list_files) as fp:  
+   for idx, line in enumerate(fp):
+        line = ' '.join(line.split())
+        #print line
+        n = line.strip().split(' ')[5:8]
+        d.append({'file_name':line.strip().split('/')[-1],\
+        'last_update': pd.to_datetime(n[1]+'-'+n[0]+'-'+n[2]),\
+        'full_path':line.strip().split(' ')[-1]})
+                   
+df = pd.DataFrame(d)
 
 
-HOST=cyrf@nl-bpo-dev.ent.dfo-mpo.ca
-ORIG=/data/seabird
-DEST=/home/cyrf0006/data/dev_database
+df = df.set_index('last_update')
+df.drop_duplicates(subset=['file_name'], keep='last', inplace=False)
 
-get_list = "ssh -q cyrf@nl-bpo-dev.ent.dfo-mpo.ca 'find /data/seabird/* -type f -name *.p[1-2][0-9][0-9][0-9] -exec ls -l {} \;' > pfiles_and_time.list"
-os.system(get_list)
 
-#with open('pfiles_and_time.list') as f:
-with open('alist.list') as f:
-   lines = f.readlines()
-
-   
-with open('alist.list') as fp:  
-    line = fp.readline()
-    cnt = 1
-    while line:
-        print("Line {}: {}".format(cnt, line.strip()))
-        line = fp.readline()
-        cnt += 1   
-
-with open('alist.list') as fp:  
-   for line in fp:
-        file = line[1].strip().split('/')[-1]
-        
-        
-       print("Line {}: {}".format(cnt, line))
-        
-for yearfile in lists:
-    outfile = os.path.splitext(yearfile)[0] + '.nc'
-    p.pfiles_to_netcdf(yearfile, outfile, zbin=5, zmax=6000)
-    print ' -> ' + outfile + ' done!'
-    expr = 'mv ' + yearfile + ' ./list_done'
-    os.system(expr)
+for file in df['full_path'].values:
+        command = 'sshpass -p ' + my_password + ' scp ' + host + ':' + path + file + ' .' 
+        print command
+        os.system(command)
