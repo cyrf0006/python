@@ -178,8 +178,8 @@ plt.subplots_adjust(left=.07, bottom=.07, right=.93, top=.9, wspace=.2, hspace=.
 
     
 #### ---- Save Figure ---- ####
-plt.suptitle('Fall surveys', fontsize=16)
-#plt.suptitle('Spring surveys', fontsize=16)
+#plt.suptitle('Fall surveys', fontsize=16)
+plt.suptitle('Spring surveys', fontsize=16)
 fig.set_size_inches(w=12, h=9)
 #fig.tight_layout() 
 fig.set_dpi(200)
