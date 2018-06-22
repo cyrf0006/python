@@ -35,7 +35,7 @@ import openpyxl, pprint
 import pandas as pd
 
 ## ---- Region parameters ---- ##
-dataFile = '/home/cyrf0006/Data/GEBCO/GRIDONE_1D.nc'
+dataFile = '/home/cyrf0006/data/GEBCO/GRIDONE_1D.nc'
 lon_0 = -50
 lat_0 = 50
 lonLims = [-60, -44]
@@ -118,7 +118,10 @@ for idx in np.arange(edges.size-1):
     x,y = m(*np.meshgrid(lon,lat))
     c = m.contourf(x, y, np.flipud(Z), v, cmap=plt.cm.PuBu_r, extend="min");
     m.fillcontinents(color='grey');
-
+    ## cc = m.contour(x, y, np.flipud(Z), v, colors="grey");
+    ## if (idx==0):
+    ##     plt.clabel(cc, inline=1, fontsize=10)
+    
     if (idx==0) | (idx==4):
         m.drawparallels([40, 45, 50, 55], labels=[1,0,0,0], fontsize=12, fontweight='normal');
     else:

@@ -49,7 +49,7 @@ if os.path.exists("./df_summer_yearly.pkl"):
 else:
     print 'Extract data from entire NAFC database (may take some time...)'
     # This is a dataset
-    ds = xr.open_mfdataset('/home/cyrf0006/Data/AZMP/dev_database/*.nc') 
+    ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/*.nc') 
 
     # Select only years after 1970
     ds = ds.sel(time=ds['time.year']>=1970)
@@ -73,7 +73,7 @@ else:
     # Selection according to season (DFO sampling seasons)
     ds_spring = ds.sel(time=((ds['time.month']>=4)) & ((ds['time.month']<=6)))
     ds_summer = ds.sel(time=((ds['time.month']>=7)) & ((ds['time.month']<=9)))
-    ds_fall = ds.sel(time=((ds['time.month']>=10)) & ((ds['time.month']<=11)))
+    ds_fall = ds.sel(time=((ds['time.month']>=10)) & ((ds['time.month']<=12)))
     
     # Temperature to Pandas Dataframe
     da_spring = ds_spring['temperature']
@@ -277,6 +277,44 @@ fig.savefig(fig_name)
 
 
 keyboard
+
+
+# Some numbers for David:
+dd = df_spring_top-df_spring_bot
+print 'spring 1980-2015:'
+print dd[(dd.index.year>=1980) & (dd.index.year<=2015)].mean()
+print dd[(dd.index.year>=1980) & (dd.index.year<=2015)].std()
+print ' '
+print 'spring 1980-1995:'
+print dd[(dd.index.year>=1980) & (dd.index.year<=1995)].mean()
+print dd[(dd.index.year>=1980) & (dd.index.year<=1995)].std()
+print ' '
+
+print 'spring 1996-2015:'
+print dd[(dd.index.year>=1996) & (dd.index.year<=2015)].mean()
+print dd[(dd.index.year>=1996) & (dd.index.year<=2015)].std()
+print ' '
+
+dd = df_fall_top-df_fall_bot
+print 'fall 1980-2015:'
+print dd[(dd.index.year>=1980) & (dd.index.year<=2015)].mean()
+print dd[(dd.index.year>=1980) & (dd.index.year<=2015)].std()
+print ' '
+
+print 'fall 1980-1995:'
+print dd[(dd.index.year>=1980) & (dd.index.year<=1995)].mean()
+print dd[(dd.index.year>=1980) & (dd.index.year<=1995)].std()
+print ' '
+
+print 'fall 1996-2015:'
+print dd[(dd.index.year>=1996) & (dd.index.year<=2015)].mean()
+print dd[(dd.index.year>=1996) & (dd.index.year<=2015)].std()
+print ' '
+
+
+
+
+
 
 spring_series = df_spring_count[97][df_spring_count[97]!=0]
 fall_series = df_fall_count[97][df_fall_count[97]!=0]
