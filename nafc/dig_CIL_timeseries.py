@@ -51,8 +51,7 @@ ds = ds.sel(level=ds['level']<500)
 ds = ds.sel(level=ds['level']>10)
 
 # Selection of a subset region
-ds = ds.where((ds.longitude>-55) & (ds.longitude<-50), drop=True)
-#ds = ds.where((ds.latitude>50) & (ds.latitude<55), drop=True)
+ds = ds.where((ds.longitude>-55) & (ds.longitude<-50), drop=True) # original one
 ds = ds.where((ds.latitude>45) & (ds.latitude<50), drop=True)
 
 # Sort by time dimension
@@ -81,15 +80,16 @@ df_temp_june = df_temp.loc[df_temp.index.month==6]
 df_temp_july = df_temp.loc[df_temp.index.month==7]
 df_concat = pd.concat((df_temp_may, df_temp_june, df_temp_july))
 df_all = df_concat.resample('A').mean()
-df_all.to_pickle('temp_summer_1948-2017.pkl') # 
+#df_all.to_pickle('temp_summer_1948-2017.pkl') # 
+
 
 
 ## --- CIL core --- ## 
 fig = plt.figure(1)
 plt.clf()
-plt.plot(df_temp_may.index, df_temp_may.min(axis=1), '-')
-plt.plot(df_temp_june.index, df_temp_june.min(axis=1), '-')
-plt.plot(df_temp_july.index, df_temp_july.min(axis=1), '-')
+plt.plot(df_temp_may.index, df_temp_may.min(axis=1), '.')
+plt.plot(df_temp_june.index, df_temp_june.min(axis=1), '.')
+plt.plot(df_temp_july.index, df_temp_july.min(axis=1), '.')
 plt.plot(df_all.index, df_all.min(axis=1).rolling(5,center=True).mean(), 'k-', linewidth=3)
 
 plt.legend(['May', 'June', 'July', '5y moving ave'], fontsize=15)
@@ -107,8 +107,7 @@ fig_name = 'CIL_core_1948-2017.png'
 fig.set_dpi(300)
 fig.savefig(fig_name)
 
-
-
+keyboard
 
 ## --- No. of cast per year --- ##
 years = np.arange(1912, 2017)
