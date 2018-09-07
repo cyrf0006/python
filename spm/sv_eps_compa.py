@@ -56,6 +56,8 @@ sv_data.append(sv2_date)
 # Convert to Pandas time
 sv_pdtime = pd.Series([pd.to_datetime(date) for date in sv_time])
 
+
+
 #### ---- Read VMP data  ---- ####
 filelist = np.genfromtxt('vmp_azfp.list', dtype=str)
 

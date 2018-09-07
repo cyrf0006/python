@@ -59,6 +59,9 @@ ds = ds.sortby('time')
 
 # Monthly average (This takes a lot of time given the sorting above)
 #ds_monthly = ds.resample('M', dim='time', how='mean') #deprecated
+
+# Monthly average
+ds = ds.sortby('time')
 ds_monthly = ds.resample(time="M").mean('time') 
 
 

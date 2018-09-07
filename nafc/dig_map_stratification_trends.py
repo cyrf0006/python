@@ -17,7 +17,8 @@ import pandas as pd
 from scipy.interpolate import griddata
 from scipy.interpolate import interp1d  # to remove NaNs in profiles
 from scipy.interpolate import RegularGridInterpolator as rgi
-
+import gsw
+from scipy import stats
 
 ## ---- Region parameters ---- ##
 dataFile = '/home/cyrf0006/data/GEBCO/GRIDONE_1D.nc'
@@ -26,17 +27,17 @@ lat_0 = 50
 lonLims = [-60, -44] # FishHab region
 latLims = [39, 56]
 proj = 'merc'
-#decim_scale = 4
+decim_scale = 4
 #spring = True
 spring = False
 fig_name = 'map_bottom_temp.png'
-zmax = 1000 # do try to compute bottom temp below that depth
+zmax = 100 # do try to compute bottom temp below that depth
 dz = 5 # vertical bins
-dc = .1
+dc = .5
 lon_reg = np.arange(lonLims[0]+dc/2, lonLims[1]-dc/2, dc)
 lat_reg = np.arange(latLims[0]+dc/2, latLims[1]-dc/2, dc)
 lon_grid, lat_grid = np.meshgrid(lon_reg,lat_reg)
-season = 'fall'
+season = 'spring'
 
 ## ---- Bathymetry ---- ####
 print('Load and grid bathymetry')
@@ -54,24 +55,24 @@ lat = np.linspace(y[0],y[-1],ny)
 # interpolate data on regular grid (temperature grid)
 # Reshape data
 zz = dataset.variables['z']
-Z = zz[:].reshape(ny, nx)
-Z = np.flipud(Z) # <------------ important!!!
+Zbathy = zz[:].reshape(ny, nx)
+Zbathy = np.flipud(Zbathy) # <------------ important!!!
 # Reduce data according to Region params
 idx_lon = np.where((lon>=lonLims[0]) & (lon<=lonLims[1]))
 idx_lat = np.where((lat>=latLims[0]) & (lat<=latLims[1]))
-Z = Z[idx_lat[0][0]:idx_lat[0][-1]+1, idx_lon[0][0]:idx_lon[0][-1]+1]
+Zbathy = Zbathy[idx_lat[0][0]:idx_lat[0][-1]+1, idx_lon[0][0]:idx_lon[0][-1]+1]
 lon = lon[idx_lon[0]]
 lat = lat[idx_lat[0]]
 # Reduce data according to Region params
-#lon = lon[::decim_scale]
-#lat = lat[::decim_scale]
-#Z = Z[::decim_scale, ::decim_scale]
+lon = lon[::decim_scale]
+lat = lat[::decim_scale]
+Zbathy = Zbathy[::decim_scale, ::decim_scale]
 
 # interpolate data on regular grid (temperature grid)
 lon_grid_bathy, lat_grid_bathy = np.meshgrid(lon,lat)
 lon_vec_bathy = np.reshape(lon_grid_bathy, lon_grid_bathy.size)
 lat_vec_bathy = np.reshape(lat_grid_bathy, lat_grid_bathy.size)
-z_vec = np.reshape(Z, Z.size)
+z_vec = np.reshape(Zbathy, Zbathy.size)
 Zitp = griddata((lon_vec_bathy, lat_vec_bathy), z_vec, (lon_grid, lat_grid), method='linear')
 print(' -> Done!')
 
@@ -98,8 +99,8 @@ div3Ps = {'lat' : xlat, 'lon' : xlon}
 
 ## ---- Get CTD data --- ##
 print('Get historical data')
-#ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/*.nc')
-ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/2017.nc')
+ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/*.nc')
+#ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/2017.nc')
 # Selection of a subset region
 ds = ds.where((ds.longitude>lonLims[0]) & (ds.longitude<lonLims[1]), drop=True)
 ds = ds.where((ds.latitude>latLims[0]) & (ds.latitude<latLims[1]), drop=True)
@@ -117,12 +118,13 @@ else:
     print('!! no season specified, used them all! !!')
 
                 
-ds = ds.sel(time=ds['time.year']>=1971)
+ds = ds.sel(time=ds['time.year']>=1998)
 # Vertical binning (on dataset; slower here as we don't need it)
 #bins = np.arange(dz/2.0, df_temp.columns.max(), dz)
 #ds = ds.groupby_bins('level', bins).mean(dim='level')
 # Restrict max depth to zmax defined earlier
 ds = ds.sel(level=ds['level']<zmax)
+
 # Vertical binning (on dataArray; more appropriate here
 da_temp = ds['temperature']
 bins = np.arange(dz/2.0, ds.level.max(), dz)
@@ -130,101 +132,101 @@ da_temp = da_temp.groupby_bins('level', bins).mean(dim='level')
 #To Pandas Dataframe
 df_temp = da_temp.to_pandas()
 df_temp.columns = bins[0:-1] #rename columns with 'bins'
-#df_temp.to_pickle('T_2000-2017.pkl')
+
+da_sal = ds['salinity']
+bins = np.arange(dz/2.0, ds.level.max(), dz)
+da_sal = da_sal.groupby_bins('level', bins).mean(dim='level')
+#To Pandas Dataframe
+df_sal = da_sal.to_pandas()
+df_sal.columns = bins[0:-1] #rename columns with 'bins'
+
+da_lat = ds['latitude']
+df_lat = da_lat.to_pandas()
+da_lon = ds['longitude']
+df_lon = da_lon.to_pandas()
 print(' -> Done!')
 
 
+## --- Compute N2 trend for each pixel --- ##  
+print('Compute N2 trends for each pixel')
+index_unique = df_temp.index.year.unique()
 
-## --- fill 3D cube --- ##  
-print('Fill regular cube')
 lons = np.array(ds.longitude)
 lats = np.array(ds.latitude)
 z = df_temp.columns.values
-V = np.full((lat_reg.size, lon_reg.size, z.size), np.nan)
+Tmap = np.full((lat_reg.size, lon_reg.size), np.nan)
+Smap = np.full((lat_reg.size, lon_reg.size), np.nan)
+Nmap = np.full((lat_reg.size, lon_reg.size), np.nan)
+
 
 # Aggregate on regular grid
-for i, xx in enumerate(lon_reg):
-    for j, yy in enumerate(lat_reg):    
-        idx = np.where((lons>=xx-dc/2) & (lons<xx+dc/2) & (lats>=yy-dc/2) & (lats<yy+dc/2))
-        tmp = np.array(df_temp.iloc[idx].mean(axis=0))
-        idx_good = np.argwhere((~np.isnan(tmp)) & (tmp<30))
-        if np.size(idx_good)==1:
-            V[j,i,:] = np.array(df_temp.iloc[idx].mean(axis=0))
-        elif np.size(idx_good)>1: # vertical interpolation between pts
-            #V[j,i,:] = np.interp((z), np.squeeze(z[idx_good]), np.squeeze(tmp[idx_good]))  <--- this method propagate nans below max depth (extrapolation)
-            interp = interp1d(np.squeeze(z[idx_good]), np.squeeze(tmp[idx_good]))  # <---------- Pay attention here, this is a bit unusual, but seems to work!
-            idx_interp = np.arange(np.int(idx_good[0]),np.int(idx_good[-1]+1))
-            V[j,i,idx_interp] = interp(z[idx_interp]) # interpolate only where possible (1st to last good idx)
+for i, xx in enumerate(lon_reg): # space loop
+    print xx
+    for j, yy in enumerate(lat_reg):
+        df_Ttmp = df_temp[(df_lon>=xx-dc/2) & (df_lon<=xx+dc/2) & (df_lat>=yy-dc/2) & (df_lat<=yy+dc/2)]
+        df_Stmp = df_sal[(df_lon>=xx-dc/2) & (df_lon<=xx+dc/2) & (df_lat>=yy-dc/2) & (df_lat<=yy+dc/2)]
+        df_Ttmp = df_Ttmp.resample('A').mean()
+        df_Stmp = df_Stmp.resample('A').mean()
 
-                   
-# horizontal interpolation at each depth
-lon_grid, lat_grid = np.meshgrid(lon_reg,lat_reg)
-lon_vec = np.reshape(lon_grid, lon_grid.size)
-lat_vec = np.reshape(lat_grid, lat_grid.size)
-for k, zz in enumerate(z):
-    # Meshgrid 1D data (after removing NaNs)
-    tmp_grid = V[:,:,k]
-    tmp_vec = np.reshape(tmp_grid, tmp_grid.size)
-    #print 'interpolate depth layer ' + np.str(k) + ' / ' + np.str(z.size) 
-    # griddata (after removing nans)
-    idx_good = np.argwhere(~np.isnan(tmp_vec))
-    if idx_good.size: # will ignore depth where no data exist
-        LN = np.squeeze(lon_vec[idx_good])
-        LT = np.squeeze(lat_vec[idx_good])
-        TT = np.squeeze(tmp_vec[idx_good])
-        zi = griddata((LN, LT), TT, (lon_grid, lat_grid), method='linear')
-        V[:,:,k] = zi
-    else:
-        continue
+        TVec = []
+        SVec = []
+        NVec = []
+        yearVec = []
+        for t, year in enumerate(index_unique): #time loop
+            T = df_Ttmp[df_Ttmp.index.year==year].values.squeeze()
+            S = df_Stmp[df_Stmp.index.year==year].values.squeeze()
+
+            if T.size < 1: # no data for this year
+                pass
+            else:            
+                Z = df_Ttmp.columns.values
+                T[(~np.isnan(T)) & (~np.isnan(S))]
+                TT = T[(~np.isnan(T)) & (~np.isnan(S))]
+                SS = S[(~np.isnan(T)) & (~np.isnan(S))]
+                ZZ = Z[(~np.isnan(T)) & (~np.isnan(S))]
+                
+                SA = gsw.SA_from_SP(SS,ZZ,xx,yy)
+                CT = gsw.CT_from_t(SA,TT,ZZ)
+                N2, pmid = gsw.Nsquared(SA, CT, ZZ, yy)
+
+                yearVec.append(year)
+                TVec.append(np.nanmean(TT))
+                SVec.append(np.nanmean(SS))
+                NVec.append(np.sqrt(np.nanmean(N2)))
+
+
+            # compute trends if serie long enough
+            x = np.array(yearVec)
+            y = np.array(TVec)
+            idx = np.where(~np.isnan(y))
+            if np.size(idx)>5:
+                m, b, r_value, p_value, std_err = stats.linregress(x[idx], y[idx])
+                Tmap[j,i] = m
+            y = np.array(SVec)
+            idx = np.where(~np.isnan(y))
+            if np.size(idx)>5:
+                m, b, r_value, p_value, std_err = stats.linregress(x[idx], y[idx])
+                Smap[j,i] = m            
+            y = np.array(NVec)
+            idx = np.where(~np.isnan(y))
+            if np.size(idx)>5:
+                m, b, r_value, p_value, std_err = stats.linregress(x[idx], y[idx])
+                Nmap[j,i] = m            
+
 print(' -> Done!')    
-
-# mask using bathymetry (I don't think it is necessary, but make nice figures)
-for i, xx in enumerate(lon_reg):
-    for j,yy in enumerate(lat_reg):
-        if Zitp[j,i] > -10: # remove shallower than 10m
-            V[j,i,:] = np.nan
-
-# getting bottom temperature
-print('Getting bottom Temp.')    
-Tbot = np.full([lat_reg.size,lon_reg.size], np.nan) 
-for i, xx in enumerate(lon_reg):
-    for j,yy in enumerate(lat_reg):
-        bottom_depth = -Zitp[j,i] # minus to turn positive
-        temp_vec = V[j,i,:]
-        ## idx_no_good = np.argwhere(temp_vec>30)
-        ## if idx_no_good.size:
-        ##     temp_vec[idx_no_good] = np.nan
-        idx_good = np.squeeze(np.where(~np.isnan(temp_vec)))
-        if idx_good.size:
-            idx_closest = np.argmin(np.abs(bottom_depth-z[idx_good]))
-        else:
-            continue
-
-        if np.abs([idx_closest] - bottom_depth) <= 20:
-            Tbot[j,i] = temp_vec[idx_good[idx_closest]]
-        elif np.abs(z[idx_closest] - bottom_depth) <= 50:
-            #print('used data located [30,50]m from bottom')
-            Tbot[j,i] = temp_vec[idx_good[idx_closest]]
-            
-print(' -> Done!')    
-            
-## keyboard
-## plt.pcolor(lon_reg, lat_reg, Tbot)
-## plt.plot(lons,lats, 'r.')
-## plt.colorbar()
-## plt.show()
 
 
 ## ---- Plot map ---- ##
 fig, ax = plt.subplots(nrows=1, ncols=1)
-m = Basemap(ax=ax, projection='merc',lon_0=lon_0,lat_0=lat_0, llcrnrlon=lonLims[0],llcrnrlat=latLims[0],urcrnrlon=lonLims[1],urcrnrlat=latLims[1], resolution='f')
-levels = np.linspace(0, 15, 16)
+m = Basemap(ax=ax, projection='merc',lon_0=lon_0,lat_0=lat_0, llcrnrlon=lonLims[0],llcrnrlat=latLims[0],urcrnrlon=lonLims[1],urcrnrlat=latLims[1], resolution='i')
+levels = np.linspace(-.0005, .0005, 9)
+#levels = 20
 xi, yi = m(*np.meshgrid(lon_reg, lat_reg))
 #lon_casts, lat_casts = m(lons[idx], lats[idx])
-c = m.contourf(xi, yi, Tbot, levels, cmap=plt.cm.RdBu_r, extend='both')
+c = m.contourf(xi, yi, Nmap, levels, cmap=plt.cm.RdBu_r, extend='both')
 #c = m.pcolor(xi, yi, Tbot, levels, cmap=plt.cm.RdBu_r, extend='both')
 x,y = m(*np.meshgrid(lon,lat))
-cc = m.contour(x, y, -Z, [100, 500, 1000, 4000], colors='grey');
+cc = m.contour(x, y, -Zbathy, [100, 500, 1000, 4000], colors='grey');
 m.fillcontinents(color='tan');
 
 m.drawparallels([40, 45, 50, 55, 60], labels=[1,0,0,0], fontsize=12, fontweight='normal');
@@ -251,30 +253,62 @@ m.drawmeridians([-60, -55, -50, -45], labels=[0,0,0,1], fontsize=12, fontweight=
 ## ax.text(np.mean(x), np.mean(y), '2J', fontsize=12, color='black', fontweight='bold')
 
 cax = plt.axes([0.85,0.15,0.04,0.7])
-cb = plt.colorbar(c, cax=cax, ticks=levels)
-cb.set_label(r'$\rm T(^{\circ}C)$', fontsize=12, fontweight='normal')
-#plt.subplots_adjust(left=.07, bottom=.07, right=.93, top=.9, wspace=.2, hspace=.2)
+#cb = plt.colorbar(c, cax=cax, ticks=levels)
+cb = plt.colorbar(c, cax=cax)
+cb.set_label(r'$\rm N(s^{-1})$', fontsize=12, fontweight='normal')
+
+fig.set_size_inches(w=7, h=9)
+#fig.tight_layout() 
+fig.set_dpi(200)
+fig.savefig('map_Nmap.png')
 
 
-x, y = m(lons, lats)
-m.scatter(x,y, s=50, marker='.',color='red')
+
+# Salinity
+fig, ax = plt.subplots(nrows=1, ncols=1)
+m = Basemap(ax=ax, projection='merc',lon_0=lon_0,lat_0=lat_0, llcrnrlon=lonLims[0],llcrnrlat=latLims[0],urcrnrlon=lonLims[1],urcrnrlat=latLims[1], resolution='i')
+levels = np.linspace(-.05, .05, 11)
+#levels = 20
+xi, yi = m(*np.meshgrid(lon_reg, lat_reg))
+#lon_casts, lat_casts = m(lons[idx], lats[idx])
+c = m.contourf(xi, yi, Smap, levels, cmap=plt.cm.RdBu_r, extend='both')
+#c = m.pcolor(xi, yi, Tbot, levels, cmap=plt.cm.RdBu_r, extend='both')
+x,y = m(*np.meshgrid(lon,lat))
+cc = m.contour(x, y, -Zbathy, [100, 500, 1000, 4000], colors='grey');
+m.fillcontinents(color='tan');
+
+m.drawparallels([40, 45, 50, 55, 60], labels=[1,0,0,0], fontsize=12, fontweight='normal');
+m.drawmeridians([-60, -55, -50, -45], labels=[0,0,0,1], fontsize=12, fontweight='normal');
+
+# Draw NAFO divisions
+## x,y = m(np.array(div3K['lon']), np.array(div3K['lat']))
+## m.plot(x,y,color='black')
+## ax.text(np.mean(x), np.mean(y), '3K', fontsize=12, color='black', fontweight='bold')
+## x,y = m(np.array(div3L['lon']), np.array(div3L['lat']))
+## m.plot(x,y,color='black')
+## ax.text(np.mean(x), np.mean(y), '3L', fontsize=12, color='black', fontweight='bold')
+## x,y = m(np.array(div3N['lon']), np.array(div3N['lat']))
+## m.plot(x,y,color='black')
+## ax.text(np.mean(x), np.mean(y), '3N', fontsize=12, color='black', fontweight='bold')
+## x,y = m(np.array(div3O['lon']), np.array(div3O['lat']))
+## m.plot(x,y,color='black')
+## ax.text(np.mean(x)*.9, np.mean(y), '3O', fontsize=12, color='black', fontweight='bold')
+## x,y = m(np.array(div3Ps['lon']), np.array(div3Ps['lat']))
+## m.plot(x,y,color='black')
+## ax.text(np.mean(x)*.7, np.mean(y)*.95, '3Ps', fontsize=12, color='black', fontweight='bold')
+## x,y = m(np.array(div2J['lon']), np.array(div2J['lat']))
+## m.plot(x,y,color='black')
+## ax.text(np.mean(x), np.mean(y), '2J', fontsize=12, color='black', fontweight='bold')
+
+cax = plt.axes([0.85,0.15,0.04,0.7])
+#cb = plt.colorbar(c, cax=cax, ticks=levels)
+cb = plt.colorbar(c, cax=cax)
+cb.set_label(r'$\rm S_{trend} (yr^{-1})$', fontsize=12, fontweight='normal')
 
 
 #### ---- Save Figure ---- ####
 #plt.suptitle('Spring surveys', fontsize=16)
-fig.set_size_inches(w=6, h=9)
+fig.set_size_inches(w=7, h=9)
 #fig.tight_layout() 
 fig.set_dpi(200)
-fig.savefig('bottom_temp.png')
-
-#### ---- Save CSV data ---- ####
-# Replace NaNs by -9999
-idx_nan = np.where(np.isnan(Tbot))
-Tbot[idx_nan] = -9999
-# define header
-Tbot_flip = np.flipud(Tbot)
-#header = '{0:^12s} {1:^6s}\n{2:^12s} {3:^6s}\n{4:^12s} {5:^6s}\n{6:^12s} {7:^6s}\n{8:^12s} {9:^6s}\n{10:^12s} {11:^6s}\n'.format('ncols', '195', 'nrows', '220', 'xllcorner', '293500', 'yllcorner', '40000', 'cellsize', '1', 'NODATA_value', '-9999')
-header = '{0:^1s} {1:^1s}\n{2:^1s} {3:^1s}\n{4:^1s} {5:^1s}\n{6:^1s} {7:^1s}\n{8:^1s} {9:^1s}\n{10:^1s} {11:^1s}'.format('NCOLS', np.str(lon_reg.size), 'NROWS', np.str(lat_reg.size), 'XLLCORNER', np.str(lon_reg.min()), 'YLLCORNER', np.str(lat_reg.min()), 'CELLSIZE', np.str(dc), 'NODATA_VALUE', '-9999')
-
-# Save
-np.savetxt("bottom_temp.asc", Tbot_flip, delimiter=" ", header=header, fmt='%5.2f', comments='')
+fig.savefig('map_Smap.png')
