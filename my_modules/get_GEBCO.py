@@ -45,7 +45,11 @@
 import numpy as np
 import netCDF4
 
+
 def main(nc_file, lims):
+    '''
+    This version is kept for legacy, but is similar to version08. Will be remove soon.
+    '''
     dataset = netCDF4.Dataset(nc_file)
     lat_min = lims[0]
     lat_max = lims[1]
@@ -58,6 +62,122 @@ def main(nc_file, lims):
     nx = (x[-1]-x[0])/spacing[0]   # num pts in x-dir
     ny = (y[-1]-y[0])/spacing[1]   # num pts in y-dir
 
+    lon = np.linspace(x[0],x[-1],nx)
+    lat = np.linspace(y[0],y[-1],ny)
+
+    # Define bounding box
+    BB = dict(
+        lon=[lon_min, lon_max],
+        lat=[lat_min, lat_max]
+        )
+
+    # nonzero returns a tuple of idx per dimension
+    # we're unpacking the tuple here so we can lookup max and min
+    (latidx,) = np.logical_and(lat >= BB['lat'][0], lat < BB['lat'][1]).nonzero()
+    (lonidx,) = np.logical_and(lon >= BB['lon'][0], lon < BB['lon'][1]).nonzero()
+
+    # initial count
+    line_skip = latidx[0]-1
+    start = line_skip*len(lon)+lonidx[0];
+
+    # loop to append indices
+    zz = [];
+    for i in  range(len(latidx)):
+        lineidx = np.arange(start,start+len(lonidx))
+        lineZ = dataset.variables['z'][lineidx]
+        zz = np.concatenate((zz,lineZ))
+        start = start + len(lon)
+    # get rid of the non used lat/lon now
+    lat = lat[latidx]
+    lon = lon[lonidx]
+
+    # reshape topo
+    Z = zz[:].reshape( len(lat), len(lon))
+
+    ## import matplotlib.pyplot as plt
+    ## v = [-2000, -1000, -500, -100, 0]
+    ## plt.contour(lon,lat,Z,v)
+    ## plt.colorbar()
+    ## plt.gca().invert_yaxis()
+    ## plt.show()
+        
+    return lat,lon,Z
+
+def version08(nc_file, lims):
+    '''
+    for GEBCO_08.nc file
+    '''
+    dataset = netCDF4.Dataset(nc_file)
+    lat_min = lims[0]
+    lat_max = lims[1]
+    lon_min = lims[2]
+    lon_max = lims[3]
+    x = dataset.variables['x_range']
+    y = dataset.variables['y_range']
+    z = dataset.variables['z']
+    spacing = dataset.variables['spacing']
+    nx = (x[-1]-x[0])/spacing[0]   # num pts in x-dir
+    ny = (y[-1]-y[0])/spacing[1]   # num pts in y-dir
+
+    lon = np.linspace(x[0],x[-1],nx)
+    lat = np.linspace(y[0],y[-1],ny)
+
+    # Define bounding box
+    BB = dict(
+        lon=[lon_min, lon_max],
+        lat=[lat_min, lat_max]
+        )
+
+    # nonzero returns a tuple of idx per dimension
+    # we're unpacking the tuple here so we can lookup max and min
+    (latidx,) = np.logical_and(lat >= BB['lat'][0], lat < BB['lat'][1]).nonzero()
+    (lonidx,) = np.logical_and(lon >= BB['lon'][0], lon < BB['lon'][1]).nonzero()
+
+    # initial count
+    line_skip = latidx[0]-1
+    start = line_skip*len(lon)+lonidx[0];
+
+    # loop to append indices
+    zz = [];
+    for i in  range(len(latidx)):
+        lineidx = np.arange(start,start+len(lonidx))
+        lineZ = dataset.variables['z'][lineidx]
+        zz = np.concatenate((zz,lineZ))
+        start = start + len(lon)
+    # get rid of the non used lat/lon now
+    lat = lat[latidx]
+    lon = lon[lonidx]
+
+    # reshape topo
+    Z = zz[:].reshape( len(lat), len(lon))
+
+    ## import matplotlib.pyplot as plt
+    ## v = [-2000, -1000, -500, -100, 0]
+    ## plt.contour(lon,lat,Z,v)
+    ## plt.colorbar()
+    ## plt.gca().invert_yaxis()
+    ## plt.show()
+        
+    return lat,lon,Z
+
+def version14(nc_file, lims):
+    '''
+    for GEBCO_2014_1D.nc file
+    '''
+    dataset = netCDF4.Dataset(nc_file)
+    lat_min = lims[0]
+    lat_max = lims[1]
+    lon_min = lims[2]
+    lon_max = lims[3]
+
+    x = [-179-59.75/60, 179+59.75/60] # to correct bug in 30'' dataset?
+    y = [-89-59.75/60, 89+59.75/60]
+    z = dataset.variables['z']
+    spacing = dataset.variables['spacing']
+
+    # Compute Lat/Lon
+    nx = int((x[-1]-x[0])/spacing[0]) + 1  # num pts in x-dir
+    ny = int((y[-1]-y[0])/spacing[1]) + 1  # num pts in y-dir
     lon = np.linspace(x[0],x[-1],nx)
     lat = np.linspace(y[0],y[-1],ny)
 
