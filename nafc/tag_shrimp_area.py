@@ -51,7 +51,6 @@ lonLims = [-70, -40]
 latLims = [40, 65]
 proj = 'merc'
 decim_scale = 4
-stationFile = '/home/cyrf0006/research/AZMP_surveys/STANDARD_SECTIONS.xlsx'
 fig_name = 'Shrimp_area.png'
 
 ## ---- Bathymetry ---- ####
