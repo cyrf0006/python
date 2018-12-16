@@ -16,7 +16,7 @@ import matplotlib.gridspec as gridspec
 # Adjust fontsize/weight
 font = {'family' : 'normal',
         'weight' : 'bold',
-        'size'   : 18}
+        'size'   : 14}
 plt.rc('font', **font)
 
 ## ---- Region parameters ---- ##
@@ -35,9 +35,9 @@ lon_reg = np.arange(lonLims[0]+dc/2, lonLims[1]-dc/2, dc)
 lat_reg = np.arange(latLims[0]+dc/2, latLims[1]-dc/2, dc)
 lon_grid, lat_grid = np.meshgrid(lon_reg,lat_reg)
 season = 'all'
-variable = 'satO2_perc'
-depth_min = 45
-depth_max = 155
+variable = 'f_pw'
+depth_min = 50
+depth_max = 300
 
 ## ----  Load biochemical data ---- ##
 df = pd.read_excel('/home/cyrf0006/github/AZMP-NL/data/AZMP_Nutrients_1999_2016_Good_Flags_Only.xlsx')
@@ -48,9 +48,10 @@ df = df.drop(['Day', 'Month', 'Year'], axis=1)
 # Compute Saturation O2 and add to dataframe
 df['satO2'] = swx.satO2(df['salinity'], df['temp'])
 df['satO2_perc'] = df['oxygen']/df['satO2']*100
+df['AOU'] = df['satO2'] - df['oxygen']
 df['ratio_NO3-PO4'] = df['NO3']/df['PO4']
 df[df['ratio_NO3-PO4']==np.inf]=np.nan # replace inf by nan
-
+df['f_pw'] = (df.NO3 - (17.499*df.PO4 - 3.072)) / ((12.368*df.PO4 - 10.549) - (17.499*df.PO4 - 3.072)) #Pacific Water fraction
 
 
 
@@ -136,29 +137,36 @@ df_section = df_section[df_section.depth<=depth_max]
 df_BB = df_section[df_section.section=='BB']
 df_SI = df_section[df_section.section=='SI']
 df_SEGB = df_section[df_section.section=='SEGB']
+df_SESPB = df_section[df_section.section=='SESPB']
 if season == 'all':
     df_BB = df_BB.resample('A').mean() # annual
     df_SI = df_SI.resample('A').mean()
     df_SEGB = df_SEGB.resample('A').mean()
+    df_SESPB = df_SESPB.resample('A').mean()
 else:
     df_BB = df_BB.resample('Q').mean() # annual
     df_SI = df_SI.resample('Q').mean()
     df_SEGB = df_SEGB.resample('Q').mean()
+    df_SESPB = df_SESPB.resample('Q').mean()
     if season == 'spring':
         df_BB = df_BB[df_BB.index.month==6]
         df_SI = df_SI[df_SI.index.month==6]
         df_SEGB = df_SEGB[df_SEGB.index.month==6]
+        df_SESPB = df_SESPB[df_SESPB.index.month==6]
     elif season == 'summer':
         df_BB = df_BB[df_BB.index.month==9]
         df_SI = df_SI[df_SI.index.month==9]
         df_SEGB = df_SEGB[df_SEGB.index.month==9]
+        df_SESPB = df_SESPB[df_SESPB.index.month==9]
     elif season == 'fall':
         df_BB = df_BB[df_BB.index.month==12]
         df_SI = df_SI[df_SI.index.month==12]
         df_SEGB = df_SEGB[df_SEGB.index.month==12]
+        df_SESPB = df_SESPB[df_SESPB.index.month==12]
     
 
 ## S1
+plt.clf()
 fig = plt.figure()
 gs1 = gridspec.GridSpec(3, 2)
 gs1.update(left=0.04, right=0.98, wspace=0.4)
@@ -177,6 +185,7 @@ m.drawmeridians([-60, -55, -50, -45], labels=[0,0,0,1], fontsize=12, fontweight=
 # plot slope data
 x, y = m(lon_slope, lat_slope)
 limit = np.mean([slope.max(), np.abs(slope.min())])
+#limit = .5
 s = m.scatter(x,y, c=slope, vmin=-limit, vmax=+limit, cmap='RdBu_r')
 # Write station names
 x,y = m(np.array(df[df.sname=='BB15'].Longitude.mean()), np.array(df[df.sname=='BB15'].Latitude.mean()))

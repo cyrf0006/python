@@ -37,7 +37,7 @@ dc = .5
 lon_reg = np.arange(lonLims[0]+dc/2, lonLims[1]-dc/2, dc)
 lat_reg = np.arange(latLims[0]+dc/2, latLims[1]-dc/2, dc)
 lon_grid, lat_grid = np.meshgrid(lon_reg,lat_reg)
-season = 'spring'
+season = 'summer'
 
 ## ---- Bathymetry ---- ####
 print('Load and grid bathymetry')
@@ -106,14 +106,13 @@ ds = ds.where((ds.longitude>lonLims[0]) & (ds.longitude<lonLims[1]), drop=True)
 ds = ds.where((ds.latitude>latLims[0]) & (ds.latitude<latLims[1]), drop=True)
 # Select time (save several options here)
 if season == 'summer':
-    #ds = ds.sel(time=ds['time.season']=='JJA')
     ds = ds.sel(time=((ds['time.month']>=7)) & ((ds['time.month']<=9)))
 elif season == 'spring':
-    #ds = ds.sel(time=ds['time.season']=='MAM')
     ds = ds.sel(time=((ds['time.month']>=4)) & ((ds['time.month']<=6)))
 elif season == 'fall':
-    #ds = ds.sel(time=ds['time.season']=='SON')
     ds = ds.sel(time=((ds['time.month']>=10)) & ((ds['time.month']<=12)))
+elif season == 'icefree':
+    ds = ds.sel(time=((ds['time.month']>=3)) & ((ds['time.month']<=12)))
 else:
     print('!! no season specified, used them all! !!')
 
@@ -223,14 +222,16 @@ levels = np.linspace(-.0005, .0005, 9)
 #levels = 20
 xi, yi = m(*np.meshgrid(lon_reg, lat_reg))
 #lon_casts, lat_casts = m(lons[idx], lats[idx])
-c = m.contourf(xi, yi, Nmap, levels, cmap=plt.cm.RdBu_r, extend='both')
-#c = m.pcolor(xi, yi, Tbot, levels, cmap=plt.cm.RdBu_r, extend='both')
+#c = m.contourf(xi, yi, Nmap, levels, cmap=plt.cm.RdBu_r, extend='both')
+c = m.pcolor(xi, yi, Nmap, cmap=plt.cm.RdBu_r, vmin=levels.min(), vmax=levels.max())
 x,y = m(*np.meshgrid(lon,lat))
 cc = m.contour(x, y, -Zbathy, [100, 500, 1000, 4000], colors='grey');
 m.fillcontinents(color='tan');
 
 m.drawparallels([40, 45, 50, 55, 60], labels=[1,0,0,0], fontsize=12, fontweight='normal');
 m.drawmeridians([-60, -55, -50, -45], labels=[0,0,0,1], fontsize=12, fontweight='normal');
+#plt.title(r'Trends in N $\rm (s^{-1}) yr^{-1}$')
+plt.title(r'$\rm \frac{dN}{dt} (s^{-1} yr^{-1})$')
 
 # Draw NAFO divisions
 ## x,y = m(np.array(div3K['lon']), np.array(div3K['lat']))
@@ -255,7 +256,7 @@ m.drawmeridians([-60, -55, -50, -45], labels=[0,0,0,1], fontsize=12, fontweight=
 cax = plt.axes([0.85,0.15,0.04,0.7])
 #cb = plt.colorbar(c, cax=cax, ticks=levels)
 cb = plt.colorbar(c, cax=cax)
-cb.set_label(r'$\rm N(s^{-1})$', fontsize=12, fontweight='normal')
+#cb.set_label(r'$\rm N(s^{-1})$', fontsize=12, fontweight='normal')
 
 fig.set_size_inches(w=7, h=9)
 #fig.tight_layout() 
@@ -271,44 +272,56 @@ levels = np.linspace(-.05, .05, 11)
 #levels = 20
 xi, yi = m(*np.meshgrid(lon_reg, lat_reg))
 #lon_casts, lat_casts = m(lons[idx], lats[idx])
-c = m.contourf(xi, yi, Smap, levels, cmap=plt.cm.RdBu_r, extend='both')
-#c = m.pcolor(xi, yi, Tbot, levels, cmap=plt.cm.RdBu_r, extend='both')
+#c = m.contourf(xi, yi, Smap, levels, cmap=plt.cm.RdBu_r, extend='both')
+c = m.pcolor(xi, yi, Smap, cmap=plt.cm.RdBu_r, vmin=levels.min(), vmax=levels.max())
 x,y = m(*np.meshgrid(lon,lat))
 cc = m.contour(x, y, -Zbathy, [100, 500, 1000, 4000], colors='grey');
 m.fillcontinents(color='tan');
 
 m.drawparallels([40, 45, 50, 55, 60], labels=[1,0,0,0], fontsize=12, fontweight='normal');
 m.drawmeridians([-60, -55, -50, -45], labels=[0,0,0,1], fontsize=12, fontweight='normal');
-
-# Draw NAFO divisions
-## x,y = m(np.array(div3K['lon']), np.array(div3K['lat']))
-## m.plot(x,y,color='black')
-## ax.text(np.mean(x), np.mean(y), '3K', fontsize=12, color='black', fontweight='bold')
-## x,y = m(np.array(div3L['lon']), np.array(div3L['lat']))
-## m.plot(x,y,color='black')
-## ax.text(np.mean(x), np.mean(y), '3L', fontsize=12, color='black', fontweight='bold')
-## x,y = m(np.array(div3N['lon']), np.array(div3N['lat']))
-## m.plot(x,y,color='black')
-## ax.text(np.mean(x), np.mean(y), '3N', fontsize=12, color='black', fontweight='bold')
-## x,y = m(np.array(div3O['lon']), np.array(div3O['lat']))
-## m.plot(x,y,color='black')
-## ax.text(np.mean(x)*.9, np.mean(y), '3O', fontsize=12, color='black', fontweight='bold')
-## x,y = m(np.array(div3Ps['lon']), np.array(div3Ps['lat']))
-## m.plot(x,y,color='black')
-## ax.text(np.mean(x)*.7, np.mean(y)*.95, '3Ps', fontsize=12, color='black', fontweight='bold')
-## x,y = m(np.array(div2J['lon']), np.array(div2J['lat']))
-## m.plot(x,y,color='black')
-## ax.text(np.mean(x), np.mean(y), '2J', fontsize=12, color='black', fontweight='bold')
+plt.title(r'$\rm \frac{dS}{dt} (yr^{-1})$')
 
 cax = plt.axes([0.85,0.15,0.04,0.7])
 #cb = plt.colorbar(c, cax=cax, ticks=levels)
 cb = plt.colorbar(c, cax=cax)
-cb.set_label(r'$\rm S_{trend} (yr^{-1})$', fontsize=12, fontweight='normal')
+#cb.set_label(r'$\rm S_{trend} (yr^{-1})$', fontsize=12, fontweight='normal')
 
-
-#### ---- Save Figure ---- ####
-#plt.suptitle('Spring surveys', fontsize=16)
 fig.set_size_inches(w=7, h=9)
 #fig.tight_layout() 
 fig.set_dpi(200)
 fig.savefig('map_Smap.png')
+
+
+# Temperature
+fig, ax = plt.subplots(nrows=1, ncols=1)
+m = Basemap(ax=ax, projection='merc',lon_0=lon_0,lat_0=lat_0, llcrnrlon=lonLims[0],llcrnrlat=latLims[0],urcrnrlon=lonLims[1],urcrnrlat=latLims[1], resolution='i')
+levels = np.linspace(-.4, .4, 9)
+#levels = 20
+xi, yi = m(*np.meshgrid(lon_reg, lat_reg))
+#lon_casts, lat_casts = m(lons[idx], lats[idx])
+#c = m.contourf(xi, yi, Tmap, levels, cmap=plt.cm.RdBu_r, extend='both')
+c = m.pcolor(xi, yi, Tmap, cmap=plt.cm.RdBu_r, vmin=levels.min(), vmax=levels.max())
+x,y = m(*np.meshgrid(lon,lat))
+cc = m.contour(x, y, -Zbathy, [100, 500, 1000, 4000], colors='grey');
+m.fillcontinents(color='tan');
+
+m.drawparallels([40, 45, 50, 55, 60], labels=[1,0,0,0], fontsize=12, fontweight='normal');
+m.drawmeridians([-60, -55, -50, -45], labels=[0,0,0,1], fontsize=12, fontweight='normal');
+plt.title(r'$\rm \frac{dT}{dt} (^{\circ}C yr^{-1})$')
+
+cax = plt.axes([0.85,0.15,0.04,0.7])
+#cb = plt.colorbar(c, cax=cax, ticks=levels)
+cb = plt.colorbar(c, cax=cax)
+#cb.set_label(r'$\rm T_{trend} (^{\circ}C yr^{-1})$', fontsize=12, fontweight='normal')
+
+fig.set_size_inches(w=7, h=9)
+#fig.tight_layout() 
+fig.set_dpi(200)
+fig.savefig('map_Tmap.png')
+
+
+#convert -trim map_Tmap_spring_0 map_Tmap_spring_0
+
+#montage map_Tmap_spring_0.5.png map_Smap_spring_0.5.png map_Nmap_spring_0.5.png map_Tmap_summer_0.5.png map_Smap_summer_0.5.png map_Nmap_summer_0.5.png map_Tmap_fall_0.5.png map_Smap_fall_0.5.png map_Nmap_fall_0.5.png -tile 3x3 -geometry +1+1  -background white  physical_trends_map.png
+

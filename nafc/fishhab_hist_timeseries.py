@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import xarray as xr
 import datetime
-import water_masses as wm
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 import shapefile 
