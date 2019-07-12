@@ -14,6 +14,7 @@ from matplotlib import dates
 import seaborn as sb
 from matplotlib import cm
 from scipy import stats
+import os
 
 # Adjust fontsize/weight
 font = {'family' : 'normal',
@@ -177,7 +178,7 @@ df = df.dropna(how='any')
 df = df[df['Sv125']>-100] # remove erroneous Sv
 df = df[df['Sv38']>-100] # remove erroneous Sv
 df = df[df['Sv67']>-100] # remove erroneous Sv
-# df = df[df.P>=20]
+#df = df[df.P>=40]
 
 df_ratio = pd.DataFrame({'eps':df.eps, 'Sv125_38':df.Sv125/df.Sv38})
 
@@ -186,6 +187,12 @@ keyboard
 
 ## -------- Sv contours and VMP and Plot -------- ##
 fig = plt.figure(2)
+days = dates.DayLocator() # AX0 - AX1
+hours6 = dates.HourLocator(interval=6)
+hours1 = dates.HourLocator(interval=1)
+hours2 = dates.HourLocator(interval=2)
+dfmt = dates.DateFormatter('%H:%M')
+
 # unstack to vectors
 eps_vec = df_eps.unstack()
 # get x,y
@@ -200,7 +207,7 @@ levels_sv = np.linspace(-10, -5, 21)
 c = ax0.contourf(df_125.index, df_125.columns, np.log10(df_125.T), levels_sv, cmap=plt.cm.gray_r)
 #c = ax0.contourf(df_sv.index, df_sv.columns, np.log10(df_sv.T), levels_sv, cmap=plt.cm.Paired)
 #plt.colorbar(c)
-c2 = ax0.scatter(x, y, c=np.log10(eps_vec), cmap=plt.cm.RdBu_r, alpha=0.3)
+c2 = ax0.scatter(x, y, c=np.log10(eps_vec), cmap=plt.cm.RdBu_r, alpha=0.4)
 cb = plt.colorbar(c2)
 ax0.set_ylim(0,105)
 ax0.invert_yaxis()
@@ -209,7 +216,12 @@ ax0.xaxis.set_major_locator(hours1)
 ax0.set_ylabel(r'Depth (m)')
 ax0.set_xlabel(r'7 Sept. 2017')
 cb.ax.set_ylabel(r'$\epsilon {\rm (W Kg^{-1})}$', fontsize=20, fontweight='bold')
-plt.show()
+#plt.show()
+fig.set_size_inches(w=18, h=6)
+fig_name = 'Sv_eps_toberename.png'
+fig.savefig(fig_name, dpi=300)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)
+
 
 ## --------------- BASIC SCATTER PLOT ---------------###
 m1,b1 = np.polyfit(df.eps, df.Sv125, 1)
@@ -246,7 +258,7 @@ plt.show()
 ## ----  KDE using Seaborn ---- ##
 fig = plt.figure(1)
 ax = plt.subplot2grid((1, 1), (0, 0))
-sb.kdeplot(df.eps, df.Sv38, cmap="Greys", shade=True, shade_lowest=False, alpha=0.7)
+#sb.kdeplot(df.eps, df.Sv38, cmap="Greys", shade=True, shade_lowest=False, alpha=0.7)
 sb.kdeplot(df.eps, df.Sv125, cmap="Reds", shade=True, shade_lowest=False, alpha=0.7)
 plt.show()
 
@@ -400,12 +412,13 @@ hours1 = dates.HourLocator(interval=1)
 fig = plt.figure(1)
 # epsilon
 
+# resample data 
+EPS = df_eps.resample('20Min').mean()
 # Casts identifyer
 casts = np.ones(len(EPS.index))
 castsID = pd.DataFrame(casts, index=EPS.index) 
 
-# resample data 
-EPS = df_eps.resample('20Min').mean()
+# plot
 ax4 = plt.subplot2grid((1, 1), (0, 0), rowspan=1, colspan=1)
 levels = np.linspace(-9,-5, 21)
 c = plt.contourf(EPS.index, EPS.columns, np.log10(np.transpose(EPS)), levels, cmap=plt.cm.RdBu_r, extend="both")

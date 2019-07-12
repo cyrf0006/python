@@ -136,10 +136,14 @@ fig = plt.figure(2)
 ax = plt.subplot(1,1,1)
 #plt.loglog(f_W30, Pxx_den_W30)
 #plt.loglog(f_W65, Pxx_den_W65, alpha=.8)
+
 plt.loglog(f_T65, Pxx_den_T65, alpha=.8)
 plt.loglog(f_W30, Pxx_den_W30, alpha=.8)
 plt.loglog(f_W65, Pxx_den_W65, alpha=.8)
 
+## plt.semilogx(f_T65, Pxx_den_T65, alpha=.8)
+## plt.semilogx(f_W30, Pxx_den_W30, alpha=.8)
+## plt.semilogx(f_W65, Pxx_den_W65, alpha=.8)
 
 #plt.loglog(f_W30s, Pxx_den_W30s)
 #plt.loglog(f_W70, Pxx_den_W70)

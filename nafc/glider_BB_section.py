@@ -26,7 +26,7 @@ az.standard_section_plot('/home/cyrf0006/data/dev_database/2015.nc', '20115', 'B
 
 ## -----> For all year climatology
 
-ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/*.nc')
+ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/20*.nc')
 
 # Select a depth range
 ds = ds.sel(level=ds['level']<1000)
@@ -55,8 +55,8 @@ da_sal = ds['salinity']
 df_sal = da_sal.to_pandas()
 
 ## Un-comment for fall only
-#df_sal = df_sal[df_sal.index.month>=10]
-#df_temp = df_temp[df_temp.index.month>=10]
+df_sal = df_sal[(df_sal.index.month>=5) & (df_sal.index.month>=9)]
+df_temp = df_temp[(df_temp.index.month>=5) & (df_temp.index.month>=9)]
 
 sal_prof = df_sal.mean(axis=0)
 temp_prof = df_temp.mean(axis=0)
@@ -103,7 +103,7 @@ ax2.set_yticklabels([])
 ax2.invert_yaxis()
 ax2.set_xlabel(r'$\rm S_A (g Kg^{-1})$')
 #plt.title('BBline climatology (Oct-Dec. / 2015-2017)')
-plt.title('BB-01 to BB-09 climatology (Jan-Dec. / 2013-2017)')
+plt.title('BB-01 to BB-09 climatology (May-Sept. / 2013-2017)')
 
 # AX3 - Rho
 ax3 = plt.subplot2grid((1, 3), (0, 2), rowspan=1, colspan=1)

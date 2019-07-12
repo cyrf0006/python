@@ -135,6 +135,7 @@ x,y = m(np.array(div2J['lon']), np.array(div2J['lat']))
 m.plot(x,y,color='black')
 ax.text(np.mean(x), np.mean(y), '2J', fontsize=12, color='black', fontweight='bold')
 
+
 #### ---- Save Figure ---- ####
 #plt.suptitle('Fall surveys', fontsize=16)
 fig.set_size_inches(w=9, h=12)

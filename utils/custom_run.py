@@ -62,7 +62,7 @@ del clean_custom_path
 def show_custom_path (line):
     global _my_custom_paths
     for path in _my_custom_paths:
-        print path
+        print(path)
 del show_custom_path
 
 # =======================================================================================

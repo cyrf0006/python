@@ -7,6 +7,15 @@ import numpy.ma as ma
 from scipy.io import loadmat
 import datetime
 import pandas as pd
+import gsw
+import SW_extras as swe
+
+# Adjust fontsize/weight
+font = {'family' : 'Times',
+        'weight' : 'normal',
+        'size'   : 12}
+plt.rc('font', **font)
+
 
 # Some info
 fig_name = 'S1_highfreq.png'
@@ -16,6 +25,7 @@ time_zoom2 = pd.Timestamp('2010-03-02 09:00:00')
 mab_adcp = 1.58
 mooring_depth = 83
 adcpdir = 'up'
+Pbin = np.arange(0.5, 85, 1)
 
 #### ---------- Wind data --------- ####
 wave_dict = loadmat('SMHI_wave_33004_201002_201003.mat',squeeze_me=True)
@@ -276,7 +286,7 @@ ax0.xaxis.label.set_visible(False)
 ax0.xaxis.set_major_locator(days)
 ax0.xaxis.set_major_formatter(dfmt)
 ax0.xaxis.set_minor_locator(hours6)
-ax0.set_ylabel(r'$\rm \overline{u_w} (m s^{-1})$', color='b')
+ax0.set_ylabel(r'$\rm \overline{U_w} (m s^{-1})$', color='b')
 ax0.set_ylim(0,20)
 ax0.tick_params('y', colors='b')
 plt.grid()
@@ -360,7 +370,7 @@ ax2.tick_params(labelbottom='off')
 ax2.xaxis.set_major_locator(days)
 ax2.xaxis.set_major_formatter(dfmt)
 ax2.xaxis.set_minor_locator(hours6)
-ax2.set_ylabel(r'$(m^2 s^{-2})\times 10^4$')
+ax2.set_ylabel(r'$\rm (m^2 s^{-2})\times 10^4$')
 ax2.set_ylim(0, 1)
 ax2.text(XLIM[0], 0.9, r"  $\rm <W'>_{(20-40m)}^2$", horizontalalignment='left', verticalalignment='center', fontsize=14, color='k')
 plt.grid()
@@ -406,6 +416,8 @@ ax3.add_patch(Rgon)
 
 # epsilon
 EPS = pd.read_pickle('MSS_S1.pkl')
+# Replace erroneous data ('jellyfish cast')
+EPS.loc[EPS.index=='2010-02-28 20:28:34',57]=np.nan
 
 # Casts identifyer
 casts = np.ones(len(EPS.index))

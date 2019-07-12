@@ -81,11 +81,26 @@ df_sal = da_sal.to_pandas()
 df_temp_may = df_temp.loc[df_temp.index.month==5]
 df_temp_june = df_temp.loc[df_temp.index.month==6]
 df_temp_july = df_temp.loc[df_temp.index.month==7]
+df_temp_aug = df_temp.loc[df_temp.index.month==8]
+df_temp_sep = df_temp.loc[df_temp.index.month==9]
+df_temp_sep = df_temp.loc[df_temp.index.month==10]
+df_temp_nov = df_temp.loc[df_temp.index.month==11]
+df_temp_dec = df_temp.loc[df_temp.index.month==12]
 df_concat = pd.concat((df_temp_may, df_temp_june, df_temp_july))
-df_all = df_concat.resample('A').mean()
+df_all = df_concat.resample('As').mean()
 #df_all.to_pickle('temp_summer_1948-2017.pkl') # 
 
+# Save core temp
+#df_core = df_all.min(axis=1).rolling(5,center=True).mean()
+#df_core.index = df_core.index.year
+#df_core.to_csv('CILcore_smooth.csv')
 
+# Save core temp
+df_core = df_all.min(axis=1).rolling(5,center=False).mean()
+df_core.index = df_core.index.year
+df_core.to_csv('CILcore_smooth_5ylagged.csv')
+
+keyboard
 
 ## --- CIL core --- ## 
 fig = plt.figure(1)
@@ -106,14 +121,45 @@ plt.grid('on')
 
 
 fig.set_size_inches(w=9,h=6)
-fig_name = 'CIL_core_1948-2017.png'
+fig_name = 'CIL_core_1948-2018.png'
 fig.set_dpi(300)
 fig.savefig(fig_name)
+
+
+
+# Add spawning stock biomass (SSB)
+df_ssb = pd.read_csv('/home/cyrf0006/research/CSAS_meetings/NC-LRP19/ssb.txt', sep='\t')
+df_ssb = df_ssb.set_index('year')
+df_ssb.index = pd.to_datetime(df_ssb.index, format='%Y')
+fig = plt.figure(1)
+plt.clf()
+CILcore = df_all.min(axis=1)
+CILanom = (CILcore - CILcore.mean())/CILcore.std()
+SSBanom = (df_ssb - df_ssb.mean())/df_ssb.std()
+plt.plot(CILanom.index, CILanom.rolling(5,center=True).mean(), 'k-', linewidth=3)
+plt.plot(SSBanom.index, SSBanom.rolling(5,center=True).mean(), 'o-', linewidth=3)
+#plt.plot(CILanom.index, CILanom, 'k-', linewidth=3)
+#plt.plot(SSBanom.index, SSBanom, 'o-', linewidth=3)
+
+plt.legend(['CIL', 'SSB'], fontsize=15)
+plt.ylabel(r'std anomaly', fontsize=15, fontweight='bold')
+plt.xlabel('Year', fontsize=15, fontweight='bold')
+plt.xlim([pd.Timestamp('1948-01-01'), pd.Timestamp('2017-01-01')])
+#plt.ylim([-2, 1])
+plt.xticks(pd.date_range('1950-01-01', periods=7, freq='10Y'))
+plt.grid('on')
+
+fig.set_size_inches(w=9,h=6)
+fig_name = 'CIL_core_1948-2018_SSB.png'
+fig.set_dpi(300)
+fig.savefig(fig_name)
+
+
 
 keyboard
 
 ## --- No. of cast per year --- ##
-years = np.arange(1912, 2017)
+years = np.arange(1912, 2019)
 time_series = ds.time.to_pandas()
 month05 = time_series.loc[time_series.index.month==5]
 month06 = time_series.loc[time_series.index.month==6]
