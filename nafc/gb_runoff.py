@@ -43,12 +43,14 @@ Wlevel = df_level.Value
 discharge.resample('M').mean().plot()
 plt.title('Monthly discharge - Alexis River')
 plt.ylabel(r'$\rm Q (m^3 s^{-1})$')
-plt.show()
+fig_name = 'Alexis_discharge.png'
+plt.savefig(fig_name, dpi=300)
 
 Wlevel.resample('M').mean().plot()
 plt.title('Monthly water level - Alexis River')
 plt.ylabel(r'$\rm \eta (m)$')
-plt.show()
+fig_name = 'Alexis_water_level.png'
+plt.savefig(fig_name, dpi=300)
 
 
 ## ---- Climatologies  ---- ##
@@ -78,7 +80,7 @@ plt.title(u'Summer (May-July) average discharge', weight='bold', fontsize=14)
 plt.grid()
 plt.ylim([-3,3])
 fig.set_size_inches(w=15,h=7)
-fig_name = 'summer_discharge.png'
+fig_name = 'Alexis_summer_discharge.png'
 fig.savefig(fig_name, dpi=300)
 os.system('convert -trim ' + fig_name + ' ' + fig_name)
 
@@ -104,17 +106,20 @@ plt.title(u'Freshet monthly max', weight='bold', fontsize=14)
 plt.grid()
 plt.ylim([-3,3])
 fig.set_size_inches(w=15,h=7)
-fig_name = 'freshet_max.png'
+fig_name = 'Alexis_freshet_max.png'
 fig.savefig(fig_name, dpi=300)
 os.system('convert -trim ' + fig_name + ' ' + fig_name)
 
 
 # HERE!!!
 ## ---- annual curve ---- ##
-discharge['woy'] = discharge.index.weekofyear
-weekly_clim = discharge.groupby('woy').mean()
-weekly_std = discharge.groupby('woy').std()
-df_2017 = discharge[discharge.index.year>=2017]
+#discharge['woy'] = pd.Series(discharge.index.weekofyear, index=discharge.index)
+WOY = pd.Series(discharge.index.weekofyear, index=discharge.index)
+df_dis = pd.concat([discharge, WOY], axis=1, keys=['discharge', 'woy'])
+
+weekly_clim = df_dis.groupby('woy').mean()
+weekly_std = df_dis.groupby('woy').std()
+df_2017 = df_dis[df_dis.index.year>=2017]
 weekly_2017 = df_2017.groupby('woy').mean()
 
 fig = plt.figure(4)
@@ -122,11 +127,11 @@ fig.clf()
 plt.plot(weekly_clim.index, weekly_clim.values, linewidth=3)
 plt.plot(weekly_2017.index, weekly_2017.values, linewidth=3)
 plt.fill_between(weekly_clim.index, np.squeeze(weekly_clim.values+weekly_std.values),np.squeeze(weekly_clim.values-weekly_std.values), facecolor='steelblue', interpolate=True , alpha=.3)
-plt.ylabel(r'T ($^{\circ}C$)')
+plt.ylabel(r'$\rm Q (m^3 s^{-1})$')
 plt.xlabel('Week of the year')
-plt.title('Comfort Cove temperature')
+plt.title('Alexis river 2017 discharge')
 plt.xlim([0,53])
-plt.ylim([-2,18])
+#plt.ylim([-2,18])
 plt.grid()
 plt.legend(['1978-2017 average', '2017'])
 fig.set_size_inches(w=15,h=9)

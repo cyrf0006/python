@@ -14,7 +14,7 @@ import os
 
 ## ----  Prepare the data ---- ##
 # load from Excel sheets
-xls = pd.ExcelFile('/home/cyrf0006/research/GilbertBay/Gilbert_Bay_Temperatures.xlsx')
+xls = pd.ExcelFile('/home/cyrf0006/data/GilbertBay/Gilbert_Bay_Temperatures.xlsx')
 df_GullIs = pd.read_excel(xls, 'Gull Island', parse_dates={'datetime': [1, 2]})
 df_Ins1 = pd.read_excel(xls, 'Inside 1 Bottom 353231', parse_dates={'datetime': [1, 2]})
 df_Ins2 = pd.read_excel(xls, 'Inside 2 353232', parse_dates={'datetime': [1, 2]})
@@ -30,7 +30,7 @@ df_Ins2.set_index(df_Ins2.datetime, inplace=True)
 df_Ins3.set_index(df_Ins3.datetime, inplace=True)
 df_Ins4.set_index(df_Ins4.datetime, inplace=True)
 df_FoxCo.set_index(df_FoxCo.datetime, inplace=True)
-df_FoxCoW.set_index(df_FoxCoW.datetime, inplace=True)
+#df_FoxCoW.set_index(df_FoxCoW.datetime, inplace=True)
 
 # Clean the dataFrames
 df_GullIs.drop(columns={'Position', 'datetime'}, inplace=True)
@@ -39,7 +39,7 @@ df_Ins2.drop(columns={'Position', 'datetime'}, inplace=True)
 df_Ins3.drop(columns={'Position', 'datetime'}, inplace=True)
 df_Ins4.drop(columns={'Position', 'datetime'}, inplace=True)
 df_FoxCo.drop(columns={'Position', 'datetime'}, inplace=True)
-df_FoxCoW.drop(columns={'Position', 'datetime'}, inplace=True)
+#df_FoxCoW.drop(columns={'Position', 'datetime'}, inplace=True)
 
 df_GullIs.rename(columns={df_GullIs.columns[1]: "Temperature" }, inplace=True)
 df_Ins1.rename(columns={df_Ins1.columns[1]: "Temperature" }, inplace=True)
@@ -48,7 +48,7 @@ df_Ins3.rename(columns={df_Ins3.columns[1]: "Temperature" }, inplace=True)
 df_Ins4.rename(columns={df_Ins4.columns[1]: "Temperature" }, inplace=True)
 df_FoxCo.rename(columns={df_FoxCo.columns[1]: "Temperature" }, inplace=True)
 df_FoxCoW.rename(columns={df_FoxCoW.columns[1]: "Temperature" }, inplace=True)
-df_FoxCoW.rename(columns={'Depth (m)': "Depth" }, inplace=True)
+#df_FoxCoW.rename(columns={'Depth (m)': "Depth" }, inplace=True)
 
 
 
@@ -56,6 +56,7 @@ df_FoxCoW.rename(columns={'Depth (m)': "Depth" }, inplace=True)
 # 1. Gull Island
 df = df_GullIs.pivot(columns='Depth', values='Temperature')
 df.to_pickle('GullIsland.pkl')
+df.to_csv('GullIsland.csv')
 # plot
 df = df.resample('D').mean()
 df.plot()
@@ -66,6 +67,7 @@ plt.show()
 # 2. Inside
 df =  pd.concat([df_Ins4.Temperature, df_Ins3.Temperature, df_Ins2.Temperature, df_Ins1.Temperature], keys = ['10m', '15m', '20m', '25m'], axis=1)
 df.to_pickle('Inside.pkl')
+df.to_csv('Inside.csv')
 # plot
 df = df.resample('D').mean()
 df.plot()
@@ -84,6 +86,7 @@ plt.show()
 # 3 Fox Cove - 2010's
 df = df_FoxCo.pivot(columns='Depth', values='Temperature')
 df.to_pickle('FoxCo.pkl')
+df.to_csv('FoxCo.csv')
 # plot
 df = df.resample('D').mean()
 plt.contourf(df.index, np.array([0,10,20,30,40,50,60,70]), df.T)
@@ -95,11 +98,11 @@ c.set_label(r'$\rm T(^{\circ}C)$')
 plt.show()
 
 # 4 Fox Cove - 1990's
-df = df_FoxCoW.Temperature
-df.to_pickle('FoxCoW.pkl')
-df = df.resample('D').mean()
-df.plot()
-plt.title('Fox Cove')
-plt.ylabel(r'$\rm T(^{\circ}C)$')
-plt.show()
+## df = df_FoxCoW.Temperature
+## df.to_pickle('FoxCoW.pkl')
+## df = df.resample('D').mean()
+## df.plot()
+## plt.title('Fox Cove')
+## plt.ylabel(r'$\rm T(^{\circ}C)$')
+## plt.show()
 
