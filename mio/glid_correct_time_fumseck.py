@@ -2,6 +2,14 @@
 A script wrote to correct timestamp problems related to GPS week roll over. See for example:
 https://kb.meinbergglobal.com/kb/time_sync/gnss_systems/gps_week_number_rollover <https://kb.meinbergglobal.com/kb/time_sync/gnss_systems/gps_week_number_rollover
 
+DIAGNOSTIC:
+Everytime the glider connects to to Irridium, the time reset to 1970-01-01 00:00:00.
+One the glider dives, the time increments are correct.
+
+SOLUTION:
+Get rid of all states where glider is at surface (remove all timestamps before glider dive, i.e., NavState=110).
+Then assume that the time of the beginning of the dive is the time of the last email received from server for this specific yo.
+
 
 Frederic.Cyr@dfo-mpo.gc.ca
 November 2019
@@ -169,6 +177,6 @@ for path in paths:
 
         # save corrected ascii files
         new_file = path + '/' + new_filename
-        df.to_csv(new_file, sep=';', float_format='%.3f', date_format='%d/%m/%Y %M:%H:%S', index=False)
+        df.to_csv(new_file, sep=';', float_format='%.3f', date_format='%d/%m/%Y %H:%M:%S', index=False)
     # remove temporary padded files
     os.system('rm ' + path + '/padded_*')
