@@ -19,6 +19,8 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import cartopy.feature as cfeature
 import netCDF4
 import os
+from math import radians, sin, cos
+
 
 ## ---- Region parameters ---- ##
 # SeaExplorer limits & target
@@ -91,6 +93,19 @@ dsSL = dsSL.sel(time=slice(timeLims_sl[0], timeLims_sl[1]))
 latVec_sl = dsSL['latitude'].values
 lonVec_sl = dsSL['longitude'].values
 Z_sl = dsSL.depth.values
+
+## ---- Load vertically averaged currents ---- ##
+df_c = pd.read_csv('mean_currents.csv', sep=';')
+df_c.set_index('yo_number', drop=True, inplace=True)
+ulat = df_c.start_arrow_lat.values
+ulon = df_c.start_arrow_lon.values
+u_norm = df_c['average current'].values
+ux = np.full_like(ulat, 0)
+uy = np.full_like(ulat, 0)
+for idx, alpha in enumerate(df_c.bearing):
+    ux[idx] = u_norm[idx]*cos(alpha) # angle from north...
+    uy[idx] = u_norm[idx]*sin(alpha)
+
 
 ## ---- Find projection ---- ##
 import coord_list
@@ -195,7 +210,9 @@ plt.plot(new_lon_sl, new_lat_sl, '.m', alpha=1,
          )
 plt.legend(['SeaExplorer track', 'Slocum track', 'projection line', 'projection line', 'SeaExplorer projected T1', 'Slocum projected T1'], fontsize=12, loc='lower right')
 
-
+# Plot current arrows
+plt.quiver(ulon[30:46], ulat[30:46], ux[30:46], uy[30:46], transform=ccrs.PlateCarree(), zorder=50)
+    
 # Save figure
 fig.set_size_inches(w=18, h=12)
 fig.savefig(fig_name, dpi=200)

@@ -28,7 +28,7 @@ idx_flag = [39, 40, 81]
 
 v1 = np.arange(27,30, .2)
 ZMAX = 300
-XLIM = 50
+XLIM = 60
 lonLims = [7, 10]
 latLims = [42, 45]
 
@@ -394,7 +394,6 @@ fig.savefig(fig_name, dpi=150)
 os.system('convert -trim ' + fig_name + ' ' + fig_name)
 
 fig = plt.figure()
-# ax1
 ax = plt.subplot2grid((1, 1), (0, 0))
 c = plt.pcolormesh(distVec, Z, CDOM[theIndex, :].T, cmap=cmo.cm.algae)
 plt.clim([.1, .6])
@@ -410,7 +409,49 @@ fig_name = 'fumseck_transect1_cdom.png'
 fig.savefig(fig_name, dpi=150)
 os.system('convert -trim ' + fig_name + ' ' + fig_name)
 
+## ---- Compute vertical changes in pressure ---- ##
+dP = np.diff(P, axis=1)
+dPdz = pd.DataFrame(dP[theIndex, :], index=distVec, columns=Z[0:-1])
+dPdz = dPdz.iloc[:,20:-20] # Keep only below 20m
+dPdz = dPdz.fillna(method="ffill", limit=5, axis=1)
 
+
+# dPdz.std()
+fig = plt.figure()
+ax = plt.subplot2grid((1, 1), (0, 0))
+c = plt.pcolormesh(dPdz.index, dPdz.columns, dPdz.rolling(50, axis=1, min_periods=25).std().T)
+plt.clim([0, 3])
+cc = plt.contour(distVec, Z, sigma0[theIndex, :].T, v1, colors='lightgray', linewidths=1)
+ax.set_ylim([0, 600])
+ax.set_xlim([0,  XLIM])
+ax.set_ylabel('Depth (m)', fontWeight = 'bold')
+ax.set_xlabel('Along-transect distance (km)', fontWeight = 'bold')
+ax.invert_yaxis()
+plt.colorbar(c)
+ax.set_title(r'Vertical velocity perturbations')
+fig_name = 'fumseck_transect1_vv_std.png'
+fig.savefig(fig_name, dpi=150)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)
+
+# dPdz.mean()
+fig = plt.figure()
+ax = plt.subplot2grid((1, 1), (0, 0))
+c = plt.pcolormesh(dPdz.index, dPdz.columns, dPdz.rolling(50, axis=1, min_periods=25).mean().T)
+plt.clim([0.7, 1.1])
+cc = plt.contour(distVec, Z, sigma0[theIndex, :].T, v1, colors='lightgray', linewidths=1)
+ax.set_ylim([0, 600])
+ax.set_xlim([0,  XLIM])
+ax.set_ylabel('Depth (m)', fontWeight = 'bold')
+ax.set_xlabel('Along-transect distance (km)', fontWeight = 'bold')
+ax.invert_yaxis()
+plt.colorbar(c)
+ax.set_title(r'Mean Vertical velocity (dB/m)')
+fig_name = 'fumseck_transect1_vv_mean.png'
+fig.savefig(fig_name, dpi=150)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)
+
+
+#plt.plot(dPdz.rolling(20, axis=1).mean().mean())   
 
 # montage fumseck_transect1_chl.png fumseck_transect1_cdom.png fumseck_transect1_try.png fumseck_transect1_phe.png fumseck_transect1_flu.png fumseck_transect1_pyr.png -tile 2x3 -geometry +10+10  -background white  fumseck_pahs_transect1.png
 # montage fumseck_transect2_chl.png fumseck_transect2_cdom.png fumseck_transect2_try.png fumseck_transect2_phe.png fumseck_transect2_flu.png fumseck_transect2_pyr.png -tile 2x3 -geometry +10+10  -background white  fumseck_pahs_transect2.png
