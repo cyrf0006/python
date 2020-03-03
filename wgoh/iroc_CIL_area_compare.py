@@ -35,8 +35,8 @@ df.to_csv('iroc_CIL.csv', sep=',', float_format='%.1f')
 
 # [some manual work to do here to add to document]
 
-df_orig = pd.read_csv('/home/cyrf0006/research/WGOH/IROC/2018_update/Newf_CIL_Area_Timeseries.csv', header=12)
-df_old = pd.read_csv('/home/cyrf0006/research/WGOH/IROC/2017_orig/Newf_CIL_Area_Timeseries.csv', header=12)
+df_orig = pd.read_csv('/home/cyrf0006/research/WGOH/IROC/2019_update/Newf_CIL_Area_Timeseries.csv', header=12)
+df_old = pd.read_csv('/home/cyrf0006/research/WGOH/IROC/2018_update/Newf_CIL_Area_Timeseries.csv', header=12)
 df_orig.set_index(['Decimal Year'], inplace=True)
 df_old.set_index(['Decimal Year'], inplace=True)
 

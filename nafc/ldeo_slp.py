@@ -6,10 +6,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import xarray as xr
 #import datetime
+import os
+os.environ['PROJ_LIB'] = '/home/cyrf0006/anaconda3/share/proj'
 from mpl_toolkits.basemap import Basemap
 
 # Some parameters
-years = [2017, 2019] # years to loop
+years = [2019, 2020] # years to loop
 v = np.arange(990, 1030) # SLP values
 
 # Load SLP data from NOAA ESRL
@@ -25,25 +27,29 @@ ds = xr.open_dataset('/home/cyrf0006/data/NOAA_ESRL/slp.mon.mean.nc')
 #ds = ds.resample('1W', dim='time', how='mean')
 
 da = ds['slp']
-p = da.to_pandas()
+#p = da.to_pandas()
+p = da.to_dataframe()
 
 #longitude = ds.lon.values
 #latitude = ds.lat.values
 v = np.arange(990, 1030, 2)
 
 # Compute climatology
-df_clim = p.mean(axis=0)
+df_clim = p.groupby(level=[1,2]).mean().unstack()
 
 # loop on years
 for year in years:
-    p_year = p[p.items.year==year]
-    months = p_year.items.month
+    
+    p_year = p[p.index.get_level_values('time').year==year]  
+    months = p_year.index.get_level_values('time').month.unique()
+    #p_year = p[p.items.year==year]
+    #months = p_year.items.month
 
     # loop on months
     for month in months:
-        df = np.squeeze(p_year[p_year.items.month==month])
+        df = p_year[p_year.index.get_level_values('time').month==month].unstack().droplevel(level='time')
         fig_name = 'SLP_map_' + np.str(year) + '-' + np.str(month).zfill(2) + '.png'
-        print fig_name
+        print(fig_name)
         ## ---- plot ---- ##
         plt.clf()
         fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -56,19 +62,15 @@ for year in years:
         m.drawmeridians(np.arange(0.,420.,60.))
         #m.drawmapboundary(fill_color='aqua')
         plt.title("Sea Level Pressure - " + np.str(year) + '-' + np.str(month).zfill(2))
-
         
-        x,y = m(*np.meshgrid(df.columns.values,df.index.values))
+        x,y = m(*np.meshgrid(df.columns.droplevel(None) ,df.index))
         c = m.contourf(x, y, df.values, v, cmap=plt.cm.inferno, extend='both');
         ct = m.contour(x, y, df_clim.values, 10, colors='k');
         cb = plt.colorbar(c)
         cb.set_label('SLP (mb)')
 
         #### ---- Save Figure ---- ####
-        #plt.suptitle('Fall surveys', fontsize=16)
         fig.set_size_inches(w=8, h=6)
-        #fig.tight_layout() 
-        fig.set_dpi(200)
-        fig.savefig(fig_name)
+        fig.savefig(fig_name, dpi=200)
 
 

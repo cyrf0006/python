@@ -18,7 +18,7 @@ import azmp_sections_tools as azst
 
 
 ## ---- Region parameters ---- ## <-------------------------------Would be nice to pass this in a config file '2017.report'
-SECTION = 'BB'
+SECTION = 'SI'
 SEASON = 'summer'
 dlat = 2 # how far from station we search
 dlon = 2
@@ -87,12 +87,12 @@ Zitp = griddata((lon_vec_bathy, lat_vec_bathy), z_vec, (lon_grid, lat_grid), met
 print(' -> Done!')
 
 print('Loop on years')
-years = np.arange(1928, 2019)
+years = np.arange(1928, 2020)
 CIL_area = np.full((years.size,2), np.nan)
 for iyear, YEAR in enumerate(years):
     print (' -> '+ str(YEAR))
     ## -------- Get CTD data -------- ##
-    year_file = '/home/cyrf0006/data/dev_database/' + str(YEAR) + '.nc'
+    year_file = '/home/cyrf0006/data/dev_database/netCDF/' + str(YEAR) + '.nc'
     print('Get ' + year_file)
     ds = xr.open_mfdataset(year_file)
 
@@ -197,7 +197,7 @@ for iyear, YEAR in enumerate(years):
 
         #2.  From interpolated field (closest to station)
         station = df_stn[df_stn.STATION==stn]
-        idx_opti = np.argmin(np.sum(np.abs(temp_coords - np.array(zip(station.LAT,station.LON))), axis=1))
+        idx_opti = np.argmin(np.sum(np.abs(temp_coords - np.array(list(zip(station.LAT,station.LON)))), axis=1))
         Tprofile = VV[idx_opti,:]
         # remove data below bottom
         bottom_depth = -ZZ[idx_opti]

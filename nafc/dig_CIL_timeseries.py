@@ -44,7 +44,7 @@ plt.rc('font', **font)
 ##     ds.to_netcdf('ds_avalon.nc')
 ##     print(' -> Done!')
 
-ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/*.nc')
+ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/netCDF/*.nc')
 
 # Select a depth range
 ds = ds.sel(level=ds['level']<500)
@@ -72,9 +72,9 @@ da_sal = ds_monthly['salinity']
 df_sal = da_sal.to_pandas()
 
 ## # Pickle data
-## df_temp.to_pickle('historical_temp_1948-2017.pkl') # 
-## df_sal.to_pickle('historical_sal_1948-2017.pkl') # 
-## print(' -> Done!')
+#df_temp.to_pickle('historical_temp_1948-2019.pkl') # 
+#df_sal.to_pickle('historical_sal_1948-2019.pkl') # 
+print(' -> Done!')
 
 
 # Compute climatology
@@ -105,25 +105,26 @@ keyboard
 ## --- CIL core --- ## 
 fig = plt.figure(1)
 plt.clf()
-plt.plot(df_temp_may.index, df_temp_may.min(axis=1), '.')
+#plt.plot(df_temp_may.index, df_temp_may.min(axis=1), '.')
 plt.plot(df_temp_june.index, df_temp_june.min(axis=1), '.')
 plt.plot(df_temp_july.index, df_temp_july.min(axis=1), '.')
+plt.plot(df_temp_aug.index, df_temp_aug.min(axis=1), '.')
 plt.plot(df_all.index, df_all.min(axis=1).rolling(5,center=True).mean(), 'k-', linewidth=3)
 
-plt.legend(['May', 'June', 'July', '5y moving ave'], fontsize=15)
+#plt.legend(['May', 'June', 'July', '5y moving ave'], fontsize=15)
+plt.legend(['June', 'July', 'August', '5y moving ave'], fontsize=15)
 plt.ylabel(r'$T_{min}$ in monthly mean profile ($^{\circ}$C)', fontsize=15, fontweight='bold')
 plt.xlabel('Year', fontsize=15, fontweight='bold')
 plt.title('CIL core temperature', fontsize=15, fontweight='bold')
-plt.xlim([pd.Timestamp('1948-01-01'), pd.Timestamp('2017-01-01')])
+plt.xlim([pd.Timestamp('1948-01-01'), pd.Timestamp('2020-01-01')])
 plt.ylim([-2, 1])
-plt.xticks(pd.date_range('1950-01-01', periods=7, freq='10Y'))
+#plt.xticks(pd.date_range('1950-01-01', periods=7, freq='10Y'))
 plt.grid('on')
 
 
 fig.set_size_inches(w=9,h=6)
-fig_name = 'CIL_core_1948-2018.png'
-fig.set_dpi(300)
-fig.savefig(fig_name)
+fig_name = 'CIL_core_1948-2019.png'
+fig.savefig(fig_name, dpi=300)
 
 
 
@@ -150,7 +151,7 @@ plt.xticks(pd.date_range('1950-01-01', periods=7, freq='10Y'))
 plt.grid('on')
 
 fig.set_size_inches(w=9,h=6)
-fig_name = 'CIL_core_1948-2018_SSB.png'
+fig_name = 'CIL_core_1948-2019_SSB.png'
 fig.set_dpi(300)
 fig.savefig(fig_name)
 

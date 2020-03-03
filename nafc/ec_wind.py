@@ -47,7 +47,7 @@ for fname in filelist:
     # find header size
     p = subprocess.Popen(['grep', '-n', 'Date', fname], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
-    hdr = np.int(out.split(':')[0])
+    hdr = np.int(out.decode().split(':')[0])
 
     df = pd.read_csv(fname, delimiter=',', header=hdr-3, skip_blank_lines=True)
 
