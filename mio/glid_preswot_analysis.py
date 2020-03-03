@@ -11,7 +11,11 @@ import pandas as pd
 import xarray as xr
 import datetime
 import seawater
+<<<<<<< HEAD
 #import pyglider as pg
+=======
+import pyglider as pg
+>>>>>>> a5612f0262f17c019ab7d6cebacd8a4dbef41ed7
 import gsw
 import cmocean as cmo
 import cartopy.crs as ccrs
@@ -58,7 +62,11 @@ df_lon.name = 'longitude'
 df = pd.concat([df_lat, df_lon], axis=1) 
 df.to_csv('preswot_SX_lat-lon.csv', float_format='%.3f', date_format='%Y-%m-%d %H:%M:%S')
 del df_lat, df_lon, df
+<<<<<<< HEAD
 #save lat_lon in csv - Slocum
+=======
+#save lat_lon in csv - SeaExplorer
+>>>>>>> a5612f0262f17c019ab7d6cebacd8a4dbef41ed7
 df_lat = dsSL['latitude'].to_pandas()
 df_lat.name = 'latitude' 
 df_lon = dsSL['longitude'].to_pandas()
@@ -885,12 +893,16 @@ pyr_vector = pyr_vector[idx_good]
 
 plt.scatter(chl_vector, trp_vector, c=pres_vector)   
 
+<<<<<<< HEAD
 ## For all transect, single variables
+=======
+>>>>>>> a5612f0262f17c019ab7d6cebacd8a4dbef41ed7
 # montage preswot_transect1_salinity.png preswot_sl_transect1_salinity.png preswot_transect2_salinity.png preswot_sl_transect2_salinity.png preswot_transect3_salinity.png -tile 2x3 -geometry +10+10  -background white  preswot_salinity.png
 # montage preswot_transect1_temperature.png preswot_sl_transect1_temperature.png preswot_transect2_temperature.png preswot_sl_transect2_temperature.png preswot_transect3_temperature.png -tile 2x3 -geometry +10+10  -background white  preswot_temperature.png
 # montage preswot_transect1_chl.png preswot_sl_transect1_chl.png preswot_transect2_chl.png preswot_sl_transect2_chl.png preswot_transect3_chl.png -tile 2x3 -geometry +10+10  -background white  preswot_chl.png
 # montage preswot_transect1_oxygen.png preswot_sl_transect1_oxygen.png preswot_transect2_oxygen.png preswot_sl_transect2_oxygen.png preswot_transect3_oxygen.png -tile 2x3 -geometry +10+10  -background white  preswot_oxygen.png
 
+<<<<<<< HEAD
 ## For PAHS transects
 # montage preswot_transect1_chl.png preswot_transect1_cdom.png preswot_transect1_try.png preswot_transect1_phe.png preswot_transect1_flu.png preswot_transect1_pyr.png -tile 2x3 -geometry +10+10  -background white  preswot_pahs_transect1.png
 # montage preswot_transect2_chl.png preswot_transect2_cdom.png preswot_transect2_try.png preswot_transect2_phe.png preswot_transect2_flu.png preswot_transect2_pyr.png -tile 2x3 -geometry +10+10  -background white  preswot_pahs_transect2.png
@@ -899,3 +911,8 @@ plt.scatter(chl_vector, trp_vector, c=pres_vector)
 ## For transect montage
 # montage preswot_transect1_temperature.png preswot_transect1_salinity.png preswot_transect1_oxygen.png preswot_transect1_chl.png preswot_transect1_cdom.png preswot_transect1_try.png -tile 2x3 -geometry +10+10  -background white  preswot_transect1.png
 # montage preswot_transect2_temperature.png preswot_transect2_salinity.png preswot_transect2_oxygen.png preswot_transect2_chl.png preswot_transect2_cdom.png preswot_transect2_try.png -tile 2x3 -geometry +10+10  -background white  preswot_transect2.png
+=======
+# montage preswot_transect1_chl.png preswot_transect1_cdom.png preswot_transect1_try.png preswot_transect1_phe.png preswot_transect1_flu.png preswot_transect1_pyr.png -tile 2x3 -geometry +10+10  -background white  preswot_pahs_transect1.png
+# montage preswot_transect2_chl.png preswot_transect2_cdom.png preswot_transect2_try.png preswot_transect2_phe.png preswot_transect2_flu.png preswot_transect2_pyr.png -tile 2x3 -geometry +10+10  -background white  preswot_pahs_transect2.png
+
+>>>>>>> a5612f0262f17c019ab7d6cebacd8a4dbef41ed7

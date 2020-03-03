@@ -43,6 +43,7 @@ pdtime = pd.to_datetime(time_orig)
 # DataFrame
 pres  = pd.Series(pres_orig, index=pdtime)
 pres.dropna(inplace=True)
+<<<<<<< HEAD
 pres = pres.resample('30s').mean()
 W = pres.diff()
 df = pd.concat([W, pres], axis=1, keys={'pressure', 'vert_vel'})      
@@ -56,6 +57,19 @@ plt.clim([-10,10])
 plt.gca().invert_yaxis()
 
 
+=======
+W = pres.diff()
+df = pd.concat([pres, W], axis=1, keys={'pressure', 'vert_vel'})      
+
+# HERE!!!!!! NEED TO SMOOTH
+
+
+
+
+df.plot()
+df.diff().plot()
+
+>>>>>>> a5612f0262f17c019ab7d6cebacd8a4dbef41ed7
 plt.plot(df.diff()**2)  
 plt.plot([timeLims[0], timeLims[0]], [0,600], '--k')
 plt.plot([timeLims[1], timeLims[1]], [0,600], '--k')
