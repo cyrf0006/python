@@ -1,13 +1,16 @@
 '''
-CIL area
+CIL area for input to the IROC
 
-This script is still in progress...
+to be run in /home/cyrf0006/research/WGOH/IROC
+
+**** See azmp_CIL_stats.py and merge both scripts into one more polyvalent****
 
 
 '''
 import os
 import netCDF4
 import xarray as xr
+os.environ['PROJ_LIB'] = '/home/cyrf0006/anaconda3/share/proj'
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -18,13 +21,17 @@ import azmp_sections_tools as azst
 
 
 ## ---- Region parameters ---- ## <-------------------------------Would be nice to pass this in a config file '2017.report'
-SECTION = 'BB'
+SECTION = 'FC'
 SEASON = 'summer'
 dlat = 2 # how far from station we search
 dlon = 2
 dz = 1 # vertical bins
 dc = .2 # grid resolution
 v = np.arange(-2,13,1)
+
+# Years to flag
+flag_BB_summer = [1982]
+flag_WB_summer = [1953, 1956, 1959, 1962, 1982, 2019]
 
 def area(vs):
     a = 0
@@ -84,17 +91,18 @@ lon_vec_bathy = np.reshape(lon_grid_bathy, lon_grid_bathy.size)
 lat_vec_bathy = np.reshape(lat_grid_bathy, lat_grid_bathy.size)
 z_vec = np.reshape(Z, Z.size)
 Zitp = griddata((lon_vec_bathy, lat_vec_bathy), z_vec, (lon_grid, lat_grid), method='linear')
+del lat, lon, Z, zz, dataset
 print(' -> Done!')
 
 print('Loop on years')
-years = np.arange(1928, 2020)
+years = np.arange(2018, 2020)
 CIL_area = np.full((years.size,2), np.nan)
 for iyear, YEAR in enumerate(years):
     print (' -> '+ str(YEAR))
     ## -------- Get CTD data -------- ##
     year_file = '/home/cyrf0006/data/dev_database/netCDF/' + str(YEAR) + '.nc'
     print('Get ' + year_file)
-    ds = xr.open_mfdataset(year_file)
+    ds = xr.open_dataset(year_file)
 
     # Remame problematic datasets
    # print('!!Remove MEDBA & MEDTE data!!')
@@ -108,11 +116,11 @@ for iyear, YEAR in enumerate(years):
 
     # Select time (save several options here)
     if SEASON == 'summer':
-        ds = ds.sel(time=((ds['time.month']>=7)) & ((ds['time.month']<=9)))
+        ds = ds.sel(time=((ds['time.month']>=6)) & ((ds['time.month']<=8)))
     elif SEASON == 'spring':
         ds = ds.sel(time=((ds['time.month']>=3)) & ((ds['time.month']<=5)))
     elif SEASON == 'fall':
-        ds = ds.sel(time=((ds['time.month']>=10)) & ((ds['time.month']<=12)))
+        ds = ds.sel(time=((ds['time.month']>=9)) & ((ds['time.month']<=12)))
     else:
         print('!! no season specified, used them all! !!')
 
@@ -269,6 +277,13 @@ for iyear, YEAR in enumerate(years):
 
 df = pd.DataFrame(CIL_area)
 df.index = years
+# Manually flag some years (check section plots for justification) 
+if SECTION=='BB' & SEASON=='summer':
+    df.loc[flag_BB_summer]=np.nan
+if SECTION=='WB' & SEASON=='summer':
+    df.loc[flag_WB_summer]=np.nan
+
+# Save data in csv        
 df.columns = ['station-ID', 'interp_field']
 outfile = 'CIL_area_' + SECTION + '.csv'
 df.to_csv(outfile)

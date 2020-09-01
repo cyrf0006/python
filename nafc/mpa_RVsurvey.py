@@ -1,3 +1,34 @@
+'''
+    Records are:
+    Record #0: [5, 'Northeast Newfoundland Slope Closure 1', 'Marine Refuge (OEABCM)', 'Fisheries and Oceans Canada', 6, 1443556.74558, 54111.5220788]
+    Record #1: [6, 'Northeast Newfoundland Slope Closure 2', 'Marine Refuge (OEABCM)', 'Fisheries and Oceans Canada', 5, 211242.748802, 1154.68404126]
+    Record #2: [7, 'Hopedale Saddle Closure', 'Marine Refuge (OEABCM)', 'Fisheries and Oceans Canada', 2, 818222.095658, 15412.4572173]
+    Record #3: [9, 'Funk Island Deep Closure', 'Marine Refuge (OEABCM)', 'Fisheries and Oceans Canada', 4, 378737.019016, 7274.21207849]
+    Record #4: [14, 'Hawke Channel Closure', 'Marine Refuge (OEABCM)', 'Fisheries and Oceans Canada', 3, 376093.587497, 8836.57491554]
+    Record #5: [15, 'Laurentian Channel', 'Marine Protected Area', 'Fisheries and Oceans Canada', 3, 678661.298122, 11619.4045159]
+    Record #6: [35, 'Division 3O Coral and Sponge Conservation Closure', 'Marine Refuge (OEABCM)', 'Fisheries and Oceans Canada', 7, 679455.445634, 10422.0091543]
+    Record #0: [0, '3O Coral Closure']
+    Record #0: [1, 0, 'Corner Seamounts', 9.9999999998, 3.9999999993]
+    Record #1: [2, 0, 'Fogo Seamounts 1', 2.84722222053, 0.493217591325]
+    Record #2: [3, 0, 'Fogo Seamounts 2', 2.84666668052, 0.493052088991]
+    Record #3: [4, 0, 'Newfoundland Seamounts', 7.70000002058, 1.72222223814]
+    Record #4: [5, 0, 'Orphan Knoll', 5.9999999988, 1.9999999992]
+    Record #5: [6, 0, 'New England Seamounts', 24.5133095399, 18.0128306383]
+    Record #0: [1, 'Tail of the Bank']
+    Record #1: [2, 'Flemish Pass / Eastern Canyon']
+    Record #2: [3, 'Beothuk Knoll']
+    Record #3: [4, 'Eastern Flemish Cap']
+    Record #4: [5, 'Northeast Flemish Cap']
+    Record #5: [6, 'Sackville Spur']
+    Record #6: [7, 'Northern Flemish Cap']
+    Record #7: [8, 'Northern Flemish Cap']
+    Record #8: [9, 'Northern Flemish Cap']
+    Record #9: [10, 'Northwest Flemish Cap']
+    Record #10: [11, 'Northwest Flemish Cap']
+    Record #11: [12, 'Northwest Flemish Cap']
+    Record #12: [13, 'Beothuk Knoll']
+    
+'''
 import netCDF4
 import h5py                                                                
 import os
@@ -7,7 +38,7 @@ import numpy as  np
 import matplotlib.pyplot as plt
 import cmocean
 import cmocean.cm as cmo
-import cartopy. crs as ccrs
+import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import cartopy.feature as cpf
 from cartopy.mpl.geoaxes import GeoAxes
@@ -47,7 +78,9 @@ for idx, rec in enumerate(records):
 
 # NAFO closures
 # 3O
-sf = shapefile.Reader('/home/cyrf0006/research/MPAs/NAFO_closures/2015_Closures_3O')
+
+
+        sf = shapefile.Reader('/home/cyrf0006/research/MPAs/NAFO_closures/2015_Closures_3O')
 records = sf.records()
 shapes = sf.shapes()
 nafo_3O = {}

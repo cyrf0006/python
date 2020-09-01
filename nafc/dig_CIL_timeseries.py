@@ -71,6 +71,9 @@ df_temp = da_temp.to_pandas()
 da_sal = ds_monthly['salinity']
 df_sal = da_sal.to_pandas()
 
+# For quick data check
+#df_temp.T.plot(linestyle='None', marker='.') 
+
 ## # Pickle data
 #df_temp.to_pickle('historical_temp_1948-2019.pkl') # 
 #df_sal.to_pickle('historical_sal_1948-2019.pkl') # 

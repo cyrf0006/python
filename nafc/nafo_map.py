@@ -19,8 +19,9 @@ Check this for nafo boxes:
 /home/cyrf0006/AZMP/state_reports/2018/nafo.html
 '''
 
-
+import os
 import netCDF4
+os.environ['PROJ_LIB'] = '/home/cyrf0006/anaconda3/share/proj'
 from mpl_toolkits.basemap import Basemap
 import numpy as  np
 import matplotlib.pyplot as plt
@@ -31,7 +32,7 @@ import cmocean
 import azmp_utils as azu
 
 ## ---- Region parameters ---- ##
-dataFile = '/home/cyrf0006/data/GEBCO/GRIDONE_1D.nc'
+dataFile = '/home/cyrf0006/data/GEBCO/GEBCO_2014_1D.nc'#GRIDONE_1D.nc'
 lon_0 = -50
 lat_0 = 50
 #lonLims = [-60, -40]
@@ -44,42 +45,52 @@ stationFile = '/home/cyrf0006/github/AZMP-NL/data/STANDARD_SECTIONS.xlsx'
 fig_name = 'map_nafo.png'
 AZMP_airTemp_file = '/home/cyrf0006/github/AZMP-NL/utils/airTemp_sites_nafo.xlsx'
 lightdeep = cmocean.tools.lighten(cmocean.cm.deep, .9)
+v = np.linspace(0, 3500, 36)
+v = np.linspace(0, 5400, 55) # Olivia's
 
 ## ---- Load SST boxes ---- ##
 df_box = pd.read_excel('/home/cyrf0006/github/AZMP-NL/utils/SST_boxes.xslx')
 #df_box = df_box[df_box.region=='NL']
 df_box = df_box[(df_box.region=='NL') | (df_box.region=='NS')]
 
-## ---- Bathymetry ---- ####
-v = np.linspace(0, 3500, 36)
-#v = np.linspace(-4000, 0, 9)
-v = np.linspace(0, 5400, 55) # Olivia's
-#v = np.append([0,25,50], np.linspace(100, 3500, 35))
+## --------- Get Bathymetry -------- ####
+bathy_file = 'nafo_map_bathy.npz'
+if os.path.isfile(bathy_file):
+    print('Load saved bathymetry!')
+    npzfile = np.load(bathy_file)
+    lat = npzfile['lat']  
+    lon = npzfile['lon']  
+    Z = npzfile['Z']
 
-
-# Load data
-dataset = netCDF4.Dataset(dataFile)
-
-# Extract variables
-x = dataset.variables['x_range']
-y = dataset.variables['y_range']
-spacing = dataset.variables['spacing']
-
-# Compute Lat/Lon
-nx = int((x[-1]-x[0])/spacing[0]) + 1  # num pts in x-dir
-ny = int((y[-1]-y[0])/spacing[1]) + 1  # num pts in y-dir
-
-lon = np.linspace(x[0],x[-1],nx)
-lat = np.linspace(y[0],y[-1],ny)
-
-# Reshape data
-zz = dataset.variables['z']
-Z = zz[:].reshape(ny, nx)
-
-# Reduce data according to Region params
-lon = lon[::decim_scale]
-lat = lat[::decim_scale]
-Z = Z[::decim_scale, ::decim_scale]
+else:
+    print('Get bathy...')
+    dataFile = '/home/cyrf0006/data/GEBCO/GEBCO_2014_1D.nc' # Maybe find a better way to handle this file
+    # Load data
+    dataset = netCDF4.Dataset(dataFile)
+    x = [-179-59.75/60, 179+59.75/60] # to correct bug in 30'' dataset?
+    y = [-89-59.75/60, 89+59.75/60]
+    spacing = dataset.variables['spacing']
+    # Compute Lat/Lon
+    nx = int((x[-1]-x[0])/spacing[0]) + 1  # num pts in x-dir
+    ny = int((y[-1]-y[0])/spacing[1]) + 1  # num pts in y-dir
+    lon = np.linspace(x[0],x[-1],nx)
+    lat = np.linspace(y[0],y[-1],ny)
+    # interpolate data on regular grid 
+    # Reshape data
+    zz = dataset.variables['z']
+    Z = zz[:].reshape(ny, nx)
+    Z = np.flipud(Z) # <------------ important!!!
+    # Reduce data according to Region params
+    idx_lon = np.where((lon>=lonLims[0]) & (lon<=lonLims[1]))
+    idx_lat = np.where((lat>=latLims[0]) & (lat<=latLims[1]))
+    Z = Z[idx_lat[0][0]:idx_lat[0][-1]+1, idx_lon[0][0]:idx_lon[0][-1]+1]
+    lon = lon[idx_lon[0]]
+    lat = lat[idx_lat[0]]
+    lon = lon[::decim_scale]
+    lat = lat[::decim_scale]
+    Z = Z[::decim_scale, ::decim_scale]
+    np.savez(bathy_file, lat=lat, lon=lon, Z=Z)
+    print(' -> Done!')
 
 ## ---- AZMP air temp Stations  ---- ##
 df = pd.read_excel(AZMP_airTemp_file)
@@ -93,7 +104,7 @@ nafo_div = azu.get_nafo_divisions()
 import pandas as pd
 df = pd.read_excel(stationFile)
 #print the column names
-print df.columns
+print(df.columns)
 #get the values for a given column
 sections = df['SECTION'].values
 stations = df['STATION'].values
@@ -121,14 +132,10 @@ index_BBL = df.SECTION[df.SECTION=="BROWNS BANK"].index.tolist()
 fig, ax = plt.subplots(nrows=1, ncols=1)
 m = Basemap(projection='merc',lon_0=lon_0,lat_0=lat_0, llcrnrlon=lonLims[0],llcrnrlat=latLims[0],urcrnrlon=lonLims[1],urcrnrlat=latLims[1], resolution='h')
 x,y = m(*np.meshgrid(lon,lat))
-c = plt.contourf(x, y, np.flipud(-Z), v, cmap=lightdeep, extend='max', zorder=1)
-cc = plt.contour(x, y, np.flipud(-Z), [100, 500, 1000, 2000, 3000, 4000, 5000], colors='lightgrey', linewidths=.5, zorder=10)
-plt.clabel(cc, inline=1, fontsize=10, colors='k', fmt='%d', zorder=1 )
-#plt.clabel(cc, inline=True, fontsize=8, fmt='%d', zorder=100)
-#c = m.contourf(x, y, np.flipud(-Z), v, cmap=cmocean.cm.deep, extend="max");
-#cc = m.contour(x, y, np.flipud(-Z), [100, 500, 1000, 3000, 4000], colors='lightgrey', linewidths=.5);
-#plt.clabel(cc, inline=1, fontsize=10, colors='gray', fmt='%d')
-#ccc = m.contour(x, y, np.flipud(-Z), [0], colors='black');
+c = plt.contourf(x, y, -Z, v, cmap=lightdeep, extend='max', zorder=1)
+cc = plt.contour(x, y, -Z, [100, 500, 1000, 2000, 3000, 4000, 5000], colors='lightgrey', linewidths=.5, zorder=10)
+plt.clabel(cc, inline=1, fontsize=10, colors='lightgray', fmt='%d')
+ccc = m.contour(x, y, -Z, [1000], colors='k', linestyle='--', linewidths=1, zorder=12);
 
 m.fillcontinents(color='tan');
 m.drawparallels(np.arange(10,70,5), labels=[1,0,0,0], fontsize=12, fontweight='bold');
@@ -156,11 +163,7 @@ plt.text(x[-1], y[-1], ' MB', horizontalalignment='left', verticalalignment='cen
 x, y = m(stationLon[index_BI],stationLat[index_BI])
 m.scatter(x,y,3,marker='o',color='r')
 plt.text(x[-1], y[-1], ' BI', horizontalalignment='left', verticalalignment='center', fontsize=10, color='r', fontweight='bold')
-## x, y = m(stationLon[index_FI],stationLat[index_FI])
-## m.scatter(x,y,3,marker='o',color='lightcoral')
-## plt.text(x[-1], y[-1], ' FI', horizontalalignment='left', verticalalignment='center', fontsize=10, color='lightcoral', fontweight='bold')
 x, y = m(stationLon[index_S27],stationLat[index_S27])
-# m.scatter(x,y,3,marker='o',color='lightcoral')
 m.scatter(x[0],y[0],100,marker='*',color='r', zorder=10)
 plt.text(x[0], y[0], ' S27', horizontalalignment='left', verticalalignment='bottom', fontsize=10, color='r', fontweight='bold')
 x, y = m(stationLon[index_SESPB],stationLat[index_SESPB])
@@ -169,7 +172,6 @@ plt.text(x[-1], y[-1], 'SESPB ', horizontalalignment='left', verticalalignment='
 x, y = m(stationLon[index_SWSPB],stationLat[index_SWSPB])
 m.scatter(x,y,3,marker='o',color='r')
 plt.text(x[-1], y[-1], 'SWSPB ', horizontalalignment='center', verticalalignment='top', fontsize=10, color='r', fontweight='bold')
-## x, y = m(stationLon[index_SS],stationLat[index_SS])
 ## m.scatter(x,y,3,marker='o',color='lightcoral')
 ## plt.text(x[0], y[0], 'SS ', horizontalalignment='right', verticalalignment='center', fontsize=10, color='lightcoral', fontweight='bold')
 x, y = m(stationLon[index_CSL],stationLat[index_CSL])
@@ -190,30 +192,12 @@ plt.text(x, y, 'S2  ', horizontalalignment='right', verticalalignment='center', 
 x, y = m(-66.85, 44.93)
 m.scatter(x,y,100,marker='*',color='r', zorder=10)
 plt.text(x, y, 'Prince 5  ', horizontalalignment='right', verticalalignment='center', fontsize=10, color='r', fontweight='bold')
-# plot SST_boxes
-abbr = df_box.abbr.values
-lat_min = df_box.lat_min.values
-lat_max = df_box.lat_max.values
-lon_min = df_box.lon_min.values
-lon_max = df_box.lon_max.values
-
-## for idx, name in enumerate(abbr):
-##     xbox = np.array([lon_min[idx], lon_max[idx], lon_max[idx], lon_min[idx], lon_min[idx]])
-##     ybox = np.array([lat_min[idx], lat_min[idx], lat_max[idx], lat_max[idx], lat_min[idx]])
-##     x, y = m(xbox, ybox)
-##     if name=='CLS':
-##         m.plot(x,y,color='w')
-##         x, y = m(xbox, ybox+1.5)
-##         plt.text(x.mean(), y.mean(), name, horizontalalignment='center', verticalalignment='center', fontsize=10, color='w', fontweight='bold')
-##     elif (name=='BRA') | (name=='NCLS') | (name=='OK'):
-##         m.plot(x,y,color='w')
-##         plt.text(x.mean(), y.mean(), name, horizontalalignment='center', verticalalignment='center', fontsize=10, color='w', fontweight='bold')
-##     else:
-##         m.plot(x,y,color='k')
-##         plt.text(x.mean(), y.mean(), name, horizontalalignment='center', verticalalignment='center', fontsize=10, color='k', fontweight='bold')
-
-# add names
-
+## # plot SST_boxes
+## abbr = df_box.abbr.values
+## lat_min = df_box.lat_min.values
+## lat_max = df_box.lat_max.values
+## lon_min = df_box.lon_min.values
+## lon_max = df_box.lon_max.values
 
 # add air temperature stations
 x, y = m(air_stationLon,air_stationLat)
