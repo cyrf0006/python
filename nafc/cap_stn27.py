@@ -131,8 +131,8 @@ T_anom = pd.concat([Tave_anom,Tsurf_anom,Tbot_anom], axis=1, keys=['Temp 0-176m'
 T_anom_std = pd.concat([Tave_anom_std,Tsurf_anom_std,Tbot_anom_std], axis=1, keys=['Temp 0-176m','Temp 0-20m','Temp 150-176m'])
 T_anom = T_anom[T_anom.index.year>1947]
 T_anom_std = T_anom_std[T_anom_std.index.year>=1947]
-S_anom = pd.concat([Save_anom,Ssurf_anom,Tbot_anom], axis=1, keys=['Sal 0-176m','Sal 0-20m','Sal 150-176m ${~}$'])
-S_anom_std = pd.concat([Save_anom_std,Ssurf_anom_std,Tbot_anom_std], axis=1, keys=['Sal 0-176m','Sal 0-20m','Sal 150-176m ${~}$'])
+S_anom = pd.concat([Save_anom,Ssurf_anom,Sbot_anom], axis=1, keys=['Sal 0-176m','Sal 0-20m','Sal 150-176m ${~}$'])
+S_anom_std = pd.concat([Save_anom_std,Ssurf_anom_std,Sbot_anom_std], axis=1, keys=['Sal 0-176m','Sal 0-20m','Sal 150-176m ${~}$'])
 S_anom = S_anom[S_anom.index.year>=1947]
 S_anom_std = S_anom_std[S_anom_std.index.year>=1947]
 # Save anomalies
@@ -149,7 +149,7 @@ fig_name = 'Feb-June_temp_stn27_stn_anom.png'
 fig.savefig(fig_name, dpi=300)
 
 #### ------------- Comparision with Carscadden ---------------- ####
-df_c = pd.read_csv('Carscadden1997_temperatures.csv', index_col='year') 
+df_c = pd.read_csv('/home/cyrf0006/research/capelin/Carscadden1997_temperatures.csv', index_col='year') 
 df_c = df_c.stack()
 y = df_c.index.get_level_values(0) 
 m = df_c.index.get_level_values(1) 
@@ -161,6 +161,8 @@ df_tmp = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/stn27_pickles_0
 df_tmp = df_tmp[df_tmp.index.year>=1950]
 T_6NM = df_tmp[df_tmp.columns[(df_tmp.columns<=20)]].mean(axis=1)
 # plot
+plt.close('all')
+fig = plt.figure(1)
 ax = df_c.plot(style='ro')   
 T_6NM.plot(ax=ax, style='.-k', alpha=1)
 df_T['Temp 0-20m'].plot(ax=ax, style='.-b', alpha=.6)
@@ -169,16 +171,9 @@ plt.legend(['Carscadden1997', 'stn27_6NM radius', 'stn27_1.5NM radius'])
 
 #### ------------- MLD ---------------- ####
 MLD_monthly = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_MLD_monthly.pkl')
+MLD_monthly = MLD_monthly[MLD_monthly.index.year>=1950]
 MLD_june = MLD_monthly[MLD_monthly.index.month==6]
 MLD_july = MLD_monthly[MLD_monthly.index.month==7]
-
-plt.figure(1)
-ax = MLD_june.rolling(5, min_periods=2).mean().plot()
-MLD_july.rolling(5, min_periods=2).mean().plot(ax=ax)
-plt.legend(['June','July'])
-plt.title('Mixed Layer Depth')
-fig_name = 'MLD_stn27_June-July.png'
-fig.savefig(fig_name, dpi=300)
 
 # Save MLD
 MLD_june.index = MLD_june.index.year
@@ -186,31 +181,90 @@ MLD_july.index = MLD_july.index.year
 MLD = pd.concat([MLD_june, MLD_july], axis=1, keys=['MLD June','MLD July'])
 MLD.to_csv('stn27_MLD_June-July.csv', float_format='%.1f')
 
+# plot MLD
+plt.close('all')
+fig = plt.figure(1)
+ax = MLD_june.rolling(5, min_periods=2).mean().plot(color='tab:blue',)
+MLD_july.rolling(5, min_periods=2).mean().plot(color='tab:orange', ax=ax)
+plt.legend(['June','July'])
+ax.grid()
+MLD_june.plot(color='tab:blue', marker = '.', linestyle = '', ax=ax)
+MLD_july.plot(color='tab:orange', marker= '.', linestyle = '', ax=ax)
+plt.title('Mixed Layer Depth')
+fig_name = 'MLD_stn27_June-July.png'
+fig.savefig(fig_name, dpi=300)
+
+
 #### ------------- Stratification ---------------- ####
 strat_monthly = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_stratif_monthly.pkl')
+strat_monthly = strat_monthly[strat_monthly.index.year>=1950]
+strat_feb = strat_monthly[strat_monthly.index.month==2]
+strat_mar = strat_monthly[strat_monthly.index.month==3]
+strat_apr = strat_monthly[strat_monthly.index.month==4]
+strat_may = strat_monthly[strat_monthly.index.month==5]
 strat_june = strat_monthly[strat_monthly.index.month==6]
 strat_july = strat_monthly[strat_monthly.index.month==7]
 
-plt.figure(2)
-ax = strat_june.rolling(5, min_periods=2).mean().plot()
-strat_july.rolling(5, min_periods=2).mean().plot(ax=ax)
+# Save stratification
+strat_feb.index = strat_feb.index.year
+strat_mar.index = strat_mar.index.year
+strat_apr.index = strat_apr.index.year
+strat_may.index = strat_may.index.year
+strat_june.index = strat_june.index.year
+strat_july.index = strat_july.index.year
+strat = pd.concat([strat_feb, strat_mar, strat_apr, strat_may, strat_june, strat_july], axis=1,
+                  keys=['strat February','strat March','strat April','strat May', 'strat June','strat July'])
+strat.to_csv('stn27_strat_Feb-July.csv', float_format='%.5f')
+
+strat_std_anom = (strat - strat[(strat.index>=1981) & (strat.index<=2010)].mean()) / strat[(strat.index>=1981) & (strat.index<=2010)].std()
+strat_std_anom.to_csv('stn27_strat_anom_Feb-July.csv', float_format='%.5f')
+
+# plot stratification
+plt.close('all')
+fig = plt.figure(2)
+ax = strat_june.rolling(5, min_periods=2).mean().plot(color='tab:blue')
+strat_july.rolling(5, min_periods=2).mean().plot(color='tab:orange', ax=ax)
 plt.legend(['June','July'])
+ax.grid()
+strat_june.plot(color='tab:blue', marker = '.', linestyle = '', ax=ax)
+strat_july.plot(color='tab:orange', marker= '.', linestyle = '', ax=ax)
 plt.title('5-50m stratification')
 fig_name = 'strat_stn27_June-July.png'
 fig.savefig(fig_name, dpi=300)
 
-# Save stratification
-strat_june.index = strat_june.index.year
-strat_july.index = strat_july.index.year
-strat = pd.concat([strat_june, strat_july], axis=1, keys=['strat June','strat July'])
-strat.to_csv('stn27_strat_June-July.csv', float_format='%.5f')
+#### ------------- Check robustness of data ---------------- ####
+mld_raw = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_MLD_raw.pkl')
+strat_raw = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_stratif_raw.pkl')
+rho_raw = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_rho_raw.pkl')
+N2_raw = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_N2_raw.pkl')
 
+stn27_occupation = mld_raw.resample('M').count()
+stn27_occupation_june = stn27_occupation[stn27_occupation.index.month==6]
+stn27_occupation_june.index = stn27_occupation_june.index.year
+stn27_occupation_july = stn27_occupation[stn27_occupation.index.month==7]
+stn27_occupation_july.index = stn27_occupation_july.index.year
+stn27_occu = pd.concat([stn27_occupation_june, stn27_occupation_july], axis=1, keys=['June', 'July'])
+
+# plot occupation
+plt.close('all')
+fig = plt.figure(2)
+stn27_occu.plot(kind= 'bar')
+plt.title('Station27 occupations')
+fig_name = 'occu_stn27_June-July.png'
+fig.savefig(fig_name, dpi=300)
+
+#Some checks
+mld_raw.index[(mld_raw.index.month==6) & (mld_raw.index.year==2014)]    
+mld_raw.index[(mld_raw.index.month==6) & (mld_raw.index.year==2012)]    
+# to plot an example of double N2 peak:
+#N2_raw[(N2_raw.index.month==6) & (N2_raw.index.year==2012)].T.plot()  
 
 #### ------------- CIL ---------------- ####
 cil_summer = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_CIL_summer_stats.pkl')
 cil_core = cil_summer['CIL core T']
 
 plt.close('all')
+fig = plt.figure(1)
 ax = cil_core.plot()
 cil_core.rolling(5, min_periods=2).mean().plot(ax=ax)
 plt.legend(['annual','5-yr rolling'])

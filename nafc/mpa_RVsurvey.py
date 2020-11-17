@@ -65,11 +65,11 @@ v = np.linspace(0, 3500, 36)
 ## ---- read shapefile ---- ##
 # MPAS / DFO closures
 sf = shapefile.Reader('/home/cyrf0006/research/MPAs/Warren_shapefiles/RV_CSAS_closures_GCS')
-records = sf.records()
+records_mpas = sf.records()
 shapes = sf.shapes()
 # Fill dictionary with closures (named MPAs for simplicity)
 mpas = {}
-for idx, rec in enumerate(records):
+for idx, rec in enumerate(records_mpas):
     if rec[0] == '':
         continue
     else:
@@ -78,13 +78,11 @@ for idx, rec in enumerate(records):
 
 # NAFO closures
 # 3O
-
-
-        sf = shapefile.Reader('/home/cyrf0006/research/MPAs/NAFO_closures/2015_Closures_3O')
-records = sf.records()
+sf = shapefile.Reader('/home/cyrf0006/research/MPAs/NAFO_closures/2015_Closures_3O')
+records_closures = sf.records()
 shapes = sf.shapes()
 nafo_3O = {}
-for idx, rec in enumerate(records):
+for idx, rec in enumerate(records_closures):
     if rec[0] == '':
         continue
     else:
@@ -92,10 +90,10 @@ for idx, rec in enumerate(records):
         nafo_3O[rec[0]] = np.array(shapes[idx].points)
 # Seamounts
 sf = shapefile.Reader('/home/cyrf0006/research/MPAs/NAFO_closures/2018_Closures_seamounts')
-records = sf.records()
+records_seamounts = sf.records()
 shapes = sf.shapes()
 nafo_seamounts = {}
-for idx, rec in enumerate(records):
+for idx, rec in enumerate(records_seamounts):
     if rec[0] == '':
         continue
     else:
@@ -103,10 +101,10 @@ for idx, rec in enumerate(records):
         nafo_seamounts[rec[0]] = np.array(shapes[idx].points)
 # Sponge&Corals
 sf = shapefile.Reader('/home/cyrf0006/research/MPAs/NAFO_closures/2019_Closures_sponge_coral')
-records = sf.records()
+records_sponges = sf.records()
 shapes = sf.shapes()
 nafo_coral = {}
-for idx, rec in enumerate(records):
+for idx, rec in enumerate(records_sponges):
     if rec[0] == '':
         continue
     else:
@@ -192,7 +190,7 @@ for idx, key in enumerate(mpas.keys()):
     pgon = Polygon(poly)
     ax.add_geometries([pgon], crs=ccrs.PlateCarree(), facecolor='red', alpha=0.5)
     # add numer
-    ax.text(poly_x.mean(), poly_y.mean(), str(records[idx][0]), transform=ccrs.PlateCarree(), horizontalalignment='center', verticalalignment='center', fontsize=10, color='r', fontweight='bold', zorder=10)
+    ax.text(poly_x.mean(), poly_y.mean(), str(records_mpas[idx][0]), transform=ccrs.PlateCarree(), horizontalalignment='center', verticalalignment='center', fontsize=10, color='r', fontweight='bold', zorder=10)
 # NAFO's 3O
 for idx, key in enumerate(nafo_3O.keys()):
     coords = nafo_3O[key]  
@@ -200,9 +198,9 @@ for idx, key in enumerate(nafo_3O.keys()):
     poly_y = coords[:,1]
     poly = list(zip(poly_x, poly_y))
     pgon = Polygon(poly)
-    ax.add_geometries([pgon], crs=ccrs.PlateCarree(), facecolor='orange', alpha=0.5)
+    ax.add_geometries([pgon], crs=ccrs.PlateCarree(), facecolor='green', alpha=0.5)
     # add numer
-    ax.text(poly_x.mean(), poly_y.mean(), str(records[idx][0]), transform=ccrs.PlateCarree(), horizontalalignment='center', verticalalignment='center', fontsize=10, color='r', fontweight='bold', zorder=10)
+    ax.text(poly_x.mean(), poly_y.mean(), str(records_closures[idx][0]), transform=ccrs.PlateCarree(), horizontalalignment='center', verticalalignment='center', fontsize=10, color='r', fontweight='bold', zorder=10)
 # NAFO's Seamounts
 for idx, key in enumerate(nafo_seamounts.keys()):
     coords = nafo_seamounts[key]  
@@ -210,9 +208,9 @@ for idx, key in enumerate(nafo_seamounts.keys()):
     poly_y = coords[:,1]
     poly = list(zip(poly_x, poly_y))
     pgon = Polygon(poly)
-    ax.add_geometries([pgon], crs=ccrs.PlateCarree(), facecolor='orange', alpha=0.5)
+    ax.add_geometries([pgon], crs=ccrs.PlateCarree(), facecolor='green', alpha=0.5)
     # add numer
-    ax.text(poly_x.mean(), poly_y.mean(), str(records[idx][0]), transform=ccrs.PlateCarree(), horizontalalignment='center', verticalalignment='center', fontsize=10, color='r', fontweight='bold', zorder=10)
+    ax.text(poly_x.mean(), poly_y.mean(), str(records_seamounts[idx][0]), transform=ccrs.PlateCarree(), horizontalalignment='center', verticalalignment='center', fontsize=10, color='r', fontweight='bold', zorder=10)
 # NAFO's Sponge & Corals
 for idx, key in enumerate(nafo_coral.keys()):
     coords = nafo_coral[key]  
@@ -220,9 +218,9 @@ for idx, key in enumerate(nafo_coral.keys()):
     poly_y = coords[:,1]
     poly = list(zip(poly_x, poly_y))
     pgon = Polygon(poly)
-    ax.add_geometries([pgon], crs=ccrs.PlateCarree(), facecolor='orange', alpha=0.5)
+    ax.add_geometries([pgon], crs=ccrs.PlateCarree(), facecolor='green', alpha=0.5)
     # add numer
-    ax.text(poly_x.mean(), poly_y.mean(), str(records[idx][0]), transform=ccrs.PlateCarree(), horizontalalignment='center', verticalalignment='center', fontsize=10, color='r', fontweight='bold', zorder=10)
+    ax.text(poly_x.mean(), poly_y.mean(), str(records_sponges[idx][0]), transform=ccrs.PlateCarree(), horizontalalignment='center', verticalalignment='center', fontsize=10, color='r', fontweight='bold', zorder=10)
 
 
     

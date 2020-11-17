@@ -119,14 +119,14 @@ plt.legend(['June', 'July', 'August', '5y moving ave'], fontsize=15)
 plt.ylabel(r'$T_{min}$ in monthly mean profile ($^{\circ}$C)', fontsize=15, fontweight='bold')
 plt.xlabel('Year', fontsize=15, fontweight='bold')
 plt.title('CIL core temperature', fontsize=15, fontweight='bold')
-plt.xlim([pd.Timestamp('1948-01-01'), pd.Timestamp('2020-01-01')])
+plt.xlim([pd.Timestamp('1948-01-01'), pd.Timestamp('2020-12-01')])
 plt.ylim([-2, 1])
 #plt.xticks(pd.date_range('1950-01-01', periods=7, freq='10Y'))
 plt.grid('on')
 
 
 fig.set_size_inches(w=9,h=6)
-fig_name = 'CIL_core_1948-2019.png'
+fig_name = 'CIL_core_1948-2020.png'
 fig.savefig(fig_name, dpi=300)
 
 
