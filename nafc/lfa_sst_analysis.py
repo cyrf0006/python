@@ -23,6 +23,9 @@ from plotly.graph_objs import *
 import cmocean
 import os
 
+YEAR_MAX = 2020
+
+
 ## Load pickled SST per polygons
 df_W = pd.read_pickle('sst_west_coast_method2.pkl')
 df_S = pd.read_pickle('sst_south_coast_method2.pkl')
@@ -38,11 +41,11 @@ df_S.set_index('time', inplace=True)
 df_NE.set_index('time', inplace=True)
 df_A.set_index('time', inplace=True)
 
-# Keep only 1982-2019
-df_W = df_W[df_W.index.year>1981]
-df_NE = df_NE[df_NE.index.year>1981]
-df_S = df_S[df_S.index.year>1981]
-df_A = df_A[df_A.index.year>1981]
+# Keep only 1982-2020
+df_W = df_W[(df_W.index.year>1981) & (df_W.index.year<=YEAR_MAX)]
+df_NE = df_NE[(df_NE.index.year>1981) & (df_NE.index.year<=YEAR_MAX)]
+df_S = df_S[(df_S.index.year>1981) & (df_S.index.year<=YEAR_MAX)]
+df_A = df_A[(df_A.index.year>1981) & (df_A.index.year<=YEAR_MAX)]
 
 
 ## Daily averages (get rid of lat/lon columns)
@@ -75,8 +78,8 @@ df_annual.index = df_annual.index.year
 df_annual.plot()
 
 ## Standardized Anomaly
-clim_mean = df_annual[(df_annual.index>=1981) & (df_annual.index<=2010)].mean()
-clim_std = df_annual[(df_annual.index>=1981) & (df_annual.index<=2010)].std()
+clim_mean = df_annual[(df_annual.index>=1991) & (df_annual.index<=2020)].mean()
+clim_std = df_annual[(df_annual.index>=1991) & (df_annual.index<=2020)].std()
 anom_std_all = (df_annual-clim_mean) / clim_std
 # Plot anomaly
 regions = ['West_Coast', 'Avalon', 'Northeast_Coast', 'South_Coast']
@@ -90,7 +93,7 @@ for name in regions:
     width = .7
     p1 = plt.bar(df1.index, np.squeeze(df1.values), width, alpha=0.8, color='indianred', zorder=10)
     p2 = plt.bar(df2.index, np.squeeze(df2.values), width, bottom=0, alpha=0.8, color='steelblue', zorder=10)
-    plt.text(1981, 2.4, r'$\rm \overline{X}_{1981-2010}=$' + str(np.round(clim_mean[name], 1)) + r'$\rm~\pm~$' + str(np.round(clim_std[name], 1)) + r'$\rm ^{\circ}C$' )
+    plt.text(1981, 2.4, r'$\rm \overline{X}_{1991-2020}=$' + str(np.round(clim_mean[name], 1)) + r'$\rm~\pm~$' + str(np.round(clim_std[name], 1)) + r'$\rm ^{\circ}C$' )
     plt.ylabel('Standardized anomaly')
     plt.title(name)
     plt.ylim([-3, 3])
@@ -122,8 +125,8 @@ days_above.index = days_above.index.year
 #days_above.plot()
 
 ## Standardized Anomaly
-clim_mean = days_above[(days_above.index>=1981) & (days_above.index<=2010)].mean()
-clim_std = days_above[(days_above.index>=1981) & (days_above.index<=2010)].std()
+clim_mean = days_above[(days_above.index>=1991) & (days_above.index<=2020)].mean()
+clim_std = days_above[(days_above.index>=1991) & (days_above.index<=2020)].std()
 anom_std_all = (days_above-clim_mean) / clim_std
 # Plot anomaly
 regions = ['West_Coast', 'Avalon', 'Northeast_Coast', 'South_Coast']
@@ -137,11 +140,11 @@ for name in regions:
     width = .7
     p1 = plt.bar(df1.index, np.squeeze(df1.values), width, alpha=0.8, color='indianred', zorder=10)
     p2 = plt.bar(df2.index, np.squeeze(df2.values), width, bottom=0, alpha=0.8, color='steelblue', zorder=10)
-    plt.text(1981, 2.4, r'$\rm \overline{X}_{1981-2010}=$' + str(np.int(np.round(clim_mean[name]))) + r'$\rm~\pm~$' + str(np.int(np.round(clim_std[name]))) + r' days' )
+    plt.text(1981, 2.4, r'$\rm \overline{X}_{1991-2020}=$' + str(np.int(np.round(clim_mean[name]))) + r'$\rm~\pm~$' + str(np.int(np.round(clim_std[name]))) + r' days' )
     plt.ylabel('Standardized anomaly')
     plt.title(name)
     plt.ylim([-3, 3])
-    plt.xlim([1980, 2020])
+    plt.xlim([1980, 2021])
     plt.grid()
     # Save Figure
     fig.set_size_inches(w=7,h=4)
@@ -183,8 +186,8 @@ days_above.index = days_above.index.year
 #plt.title('number of days above 15 degC')
 
 ## Standardized Anomaly
-clim_mean = days_above[(days_above.index>=1981) & (days_above.index<=2010)].mean()
-clim_std = days_above[(days_above.index>=1981) & (days_above.index<=2010)].std()
+clim_mean = days_above[(days_above.index>=1991) & (days_above.index<=2020)].mean()
+clim_std = days_above[(days_above.index>=1991) & (days_above.index<=2020)].std()
 anom_std_all = (days_above-clim_mean) / clim_std
 # Plot anomaly
 regions = ['West_Coast', 'Avalon', 'Northeast_Coast', 'South_Coast']
@@ -199,13 +202,13 @@ for name in regions:
     p1 = plt.bar(df1.index, np.squeeze(df1.values), width, alpha=0.8, color='indianred', zorder=10)
     p2 = plt.bar(df2.index, np.squeeze(df2.values), width, bottom=0, alpha=0.8, color='steelblue', zorder=10)
     if clim_mean[name]>0:
-        plt.text(1981, 2.4, r'$\rm \overline{X}_{1981-2010}=$' + str(np.int(np.round(clim_mean[name]))) + r'$\rm~\pm~$' + str(np.int(np.round(clim_std[name]))) + r' days' )
+        plt.text(1981, 2.4, r'$\rm \overline{X}_{1991-2020}=$' + str(np.int(np.round(clim_mean[name]))) + r'$\rm~\pm~$' + str(np.int(np.round(clim_std[name]))) + r' days' )
     else:
         plt.text(1981, 2.4, r'N/A')
     plt.ylabel('Standardized anomaly')
     plt.title(name)
     plt.ylim([-3, 3])
-    plt.xlim([1980, 2020])
+    plt.xlim([1980, 2021])
     plt.grid()
     # Save Figure
     fig.set_size_inches(w=7,h=4)
@@ -247,8 +250,8 @@ days_above.index = days_above.index.year
 #plt.title('number of days between 12-18 degC')
 
 ## Standardized Anomaly
-clim_mean = days_above[(days_above.index>=1981) & (days_above.index<=2010)].mean()
-clim_std = days_above[(days_above.index>=1981) & (days_above.index<=2010)].std()
+clim_mean = days_above[(days_above.index>=1991) & (days_above.index<=2020)].mean()
+clim_std = days_above[(days_above.index>=1991) & (days_above.index<=2020)].std()
 anom_std_all = (days_above-clim_mean) / clim_std
 # Plot anomaly
 regions = ['West_Coast', 'Avalon', 'Northeast_Coast', 'South_Coast']
@@ -262,7 +265,7 @@ for name in regions:
     width = .7
     p1 = plt.bar(df1.index, np.squeeze(df1.values), width, alpha=0.8, color='indianred', zorder=10)
     p2 = plt.bar(df2.index, np.squeeze(df2.values), width, bottom=0, alpha=0.8, color='steelblue', zorder=10)
-    plt.text(1981, 2.4, r'$\rm \overline{X}_{1981-2010}=$' + str(np.int(np.round(clim_mean[name]))) + r'$\rm~\pm~$' + str(np.int(np.round(clim_std[name]))) + r' days' )
+    plt.text(1981, 2.4, r'$\rm \overline{X}_{1991-2020}=$' + str(np.int(np.round(clim_mean[name]))) + r'$\rm~\pm~$' + str(np.int(np.round(clim_std[name]))) + r' days' )
     plt.ylabel('Standardized anomaly')
     plt.title(name)
     plt.ylim([-3, 3])
@@ -282,6 +285,12 @@ df_W_weekly = df_W.resample('W').mean().sst
 df_NE_weekly = df_NE.resample('W').mean().sst
 df_S_weekly = df_S.resample('W').mean().sst
 df_A_weekly = df_A.resample('W').mean().sst
+# restrict years
+df_W_weekly = df_W_weekly[df_W_weekly.index.year<=YEAR_MAX]
+df_NE_weekly = df_NE_weekly[df_NE_weekly.index.year<=YEAR_MAX]
+df_S_weekly = df_S_weekly[df_S_weekly.index.year<=YEAR_MAX]
+df_A_weekly = df_A_weekly[df_A_weekly.index.year<=YEAR_MAX]
+
 
 # find max weekly average temperature
 weekly_max_W = df_W_weekly.resample('As').max()
@@ -297,8 +306,8 @@ weekly_max.index = weekly_max.index.year
 #plt.title('Maximum weekly average temperature')
 
 ## Standardized Anomaly
-clim_mean = weekly_max[(weekly_max.index>=1981) & (weekly_max.index<=2010)].mean()
-clim_std = weekly_max[(weekly_max.index>=1981) & (weekly_max.index<=2010)].std()
+clim_mean = weekly_max[(weekly_max.index>=1991) & (weekly_max.index<=2020)].mean()
+clim_std = weekly_max[(weekly_max.index>=1991) & (weekly_max.index<=2020)].std()
 anom_std_all = (weekly_max-clim_mean) / clim_std
 # Plot anomaly
 regions = ['West_Coast', 'Avalon', 'Northeast_Coast', 'South_Coast']
@@ -314,7 +323,7 @@ for idx, name in enumerate(regions):
     width = .7
     p1 = plt.bar(df1.index, np.squeeze(df1.values), width, alpha=0.8, color='indianred', zorder=10)
     p2 = plt.bar(df2.index, np.squeeze(df2.values), width, bottom=0, alpha=0.8, color='steelblue', zorder=10)
-    plt.text(1981, 2.4, r'$\rm \overline{X}_{1981-2010}=$' + str(np.round(clim_mean[name], 1)) + r'$\rm~\pm~$' + str(np.round(clim_std[name], 1)) + r'$\rm ^{\circ}C$' )
+    plt.text(1981, 2.4, r'$\rm \overline{X}_{1991-2020}=$' + str(np.round(clim_mean[name], 1)) + r'$\rm~\pm~$' + str(np.round(clim_std[name], 1)) + r'$\rm ^{\circ}C$' )
     plt.ylabel('Normalized anomaly')
     plt.title(region_name_EN[idx])
     plt.ylim([-3, 3])
@@ -362,8 +371,8 @@ woy_max.columns = ['West_Coast', 'Northeast_Coast', 'South_Coast', 'Avalon']
 
 
 ## Standardized Anomaly
-clim_mean = woy_max[(woy_max.index>=1981) & (woy_max.index<=2010)].mean()
-clim_std = woy_max[(woy_max.index>=1981) & (woy_max.index<=2010)].std()
+clim_mean = woy_max[(woy_max.index>=1991) & (woy_max.index<=2020)].mean()
+clim_std = woy_max[(woy_max.index>=1991) & (woy_max.index<=2020)].std()
 anom_std_all = (woy_max-clim_mean) / clim_std
 # Plot anomaly
 regions = ['West_Coast', 'Avalon', 'Northeast_Coast', 'South_Coast']

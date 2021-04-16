@@ -21,17 +21,25 @@ import azmp_sections_tools as azst
 
 
 ## ---- Region parameters ---- ## <-------------------------------Would be nice to pass this in a config file '2017.report'
-SECTION = 'FC'
+SECTION = 'BB'
 SEASON = 'summer'
-dlat = 2 # how far from station we search
-dlon = 2
+YEAR_MIN = 1950
+YEAR_MAX = 2020
+
+dlat = 1 # how far from station we search
+dlon = 1
 dz = 1 # vertical bins
-dc = .2 # grid resolution
+dc = .05 # grid resolution
+#dc = 0.01
 v = np.arange(-2,13,1)
 
 # Years to flag
-flag_BB_summer = [1982]
-flag_WB_summer = [1953, 1956, 1959, 1962, 1982, 2019]
+flag_SI_summer = np.array([1981, 1989])
+flag_BB_summer = np.array([1981])
+flag_WB_summer = np.array([1953, 1956, 1959, 1962, 1980, 1982, 2019, 2020])
+flag_BB_summer = flag_BB_summer[(flag_BB_summer>=YEAR_MIN) & (flag_BB_summer<=YEAR_MAX)]
+flag_WB_summer = flag_WB_summer[(flag_WB_summer>=YEAR_MIN) & (flag_WB_summer<=YEAR_MAX)]
+
 
 def area(vs):
     a = 0
@@ -52,61 +60,70 @@ df_stn = df_stn.rename(columns={'LONG.1': 'LON'})
 df_stn = df_stn.dropna()
 df_stn = df_stn[df_stn.STATION.str.contains(SECTION)]
 df_stn = df_stn.reset_index(drop=True)
+if SECTION=='FC':
+    df_stn = df_stn.iloc[0:25]
 stn_list = df_stn.STATION.values
 
 # Derive regular grid
 latLims = np.array([df_stn.LAT.min() - dlat, df_stn.LAT.max() + dlat])
 lonLims = np.array([df_stn.LON.min() - dlon, df_stn.LON.max() + dlon])
-lon_reg = np.arange(lonLims[0]+dc/2, lonLims[1]-dc/2, dc)
-lat_reg = np.arange(latLims[0]+dc/2, latLims[1]-dc/2, dc)
+lon_reg = np.arange(lonLims[0]-dc/2, lonLims[1]+dc/2, dc)
+lat_reg = np.arange(latLims[0]-dc/2, latLims[1]+dc/2, dc)
 
 ## --------- Get Bathymetry -------- ####
-print('Get bathy...')
-dataFile = '/home/cyrf0006/data/GEBCO/GEBCO_2014_1D.nc' # Maybe find a better way to handle this file
-lon_grid, lat_grid = np.meshgrid(lon_reg,lat_reg)
-# Load data
-dataset = netCDF4.Dataset(dataFile)
-x = [-179-59.75/60, 179+59.75/60] # to correct bug in 30'' dataset?
-y = [-89-59.75/60, 89+59.75/60]
-spacing = dataset.variables['spacing']
-# Compute Lat/Lon
-nx = int((x[-1]-x[0])/spacing[0]) + 1  # num pts in x-dir
-ny = int((y[-1]-y[0])/spacing[1]) + 1  # num pts in y-dir
-lon = np.linspace(x[0],x[-1],nx)
-lat = np.linspace(y[0],y[-1],ny)
-# interpolate data on regular grid (temperature grid)
-# Reshape data
-zz = dataset.variables['z']
-Z = zz[:].reshape(ny, nx)
-Z = np.flipud(Z) # <------------ important!!!
-# Reduce data according to Region params
-idx_lon = np.where((lon>=lonLims[0]) & (lon<=lonLims[1]))
-idx_lat = np.where((lat>=latLims[0]) & (lat<=latLims[1]))
-Z = Z[idx_lat[0][0]:idx_lat[0][-1]+1, idx_lon[0][0]:idx_lon[0][-1]+1]
-lon = lon[idx_lon[0]]
-lat = lat[idx_lat[0]]
-# interpolate data on regular grid (temperature grid)
-lon_grid_bathy, lat_grid_bathy = np.meshgrid(lon,lat)
-lon_vec_bathy = np.reshape(lon_grid_bathy, lon_grid_bathy.size)
-lat_vec_bathy = np.reshape(lat_grid_bathy, lat_grid_bathy.size)
-z_vec = np.reshape(Z, Z.size)
-Zitp = griddata((lon_vec_bathy, lat_vec_bathy), z_vec, (lon_grid, lat_grid), method='linear')
-del lat, lon, Z, zz, dataset
-print(' -> Done!')
+bathy_file = './' + SECTION + '_bathy.npy'
+if os.path.isfile(bathy_file):
+    print('Load saved bathymetry!')
+    Zitp = np.load(bathy_file)
 
+else:
+    print('Get bathy...')
+    dataFile = '/home/cyrf0006/data/GEBCO/GEBCO_2014_1D.nc' # Maybe find a better way to handle this file
+    lon_grid, lat_grid = np.meshgrid(lon_reg,lat_reg)
+    # Load data
+    dataset = netCDF4.Dataset(dataFile)
+    x = [-179-59.75/60, 179+59.75/60] # to correct bug in 30'' dataset?
+    y = [-89-59.75/60, 89+59.75/60]
+    spacing = dataset.variables['spacing']
+    # Compute Lat/Lon
+    nx = int((x[-1]-x[0])/spacing[0]) + 1  # num pts in x-dir
+    ny = int((y[-1]-y[0])/spacing[1]) + 1  # num pts in y-dir
+    lon = np.linspace(x[0],x[-1],nx)
+    lat = np.linspace(y[0],y[-1],ny)
+    # interpolate data on regular grid 
+    # Reshape data
+    zz = dataset.variables['z']
+    Z = zz[:].reshape(ny, nx)
+    Z = np.flipud(Z) # <------------ important!!!
+    # Reduce data according to Region params
+    idx_lon = np.where((lon>=lonLims[0]) & (lon<=lonLims[1]))
+    idx_lat = np.where((lat>=latLims[0]) & (lat<=latLims[1]))
+    Z = Z[idx_lat[0][0]:idx_lat[0][-1]+1, idx_lon[0][0]:idx_lon[0][-1]+1]
+    lon = lon[idx_lon[0]]
+    lat = lat[idx_lat[0]]
+    # interpolate data on regular grid 
+    lon_grid_bathy, lat_grid_bathy = np.meshgrid(lon,lat)
+    lon_vec_bathy = np.reshape(lon_grid_bathy, lon_grid_bathy.size)
+    lat_vec_bathy = np.reshape(lat_grid_bathy, lat_grid_bathy.size)
+    z_vec = np.reshape(Z, Z.size)
+    Zitp = griddata((lon_vec_bathy, lat_vec_bathy), z_vec, (lon_grid, lat_grid), method='linear')
+    np.save(bathy_file, Zitp)
+    del Z, zz, z_vec, lon, lat, lon_grid_bathy, lon_vec_bathy, lat_vec_bathy
+    print(' -> Done!')
+
+
+## --------- Loop on years -------- ####
 print('Loop on years')
-years = np.arange(2018, 2020)
+years = np.arange(YEAR_MIN, YEAR_MAX+1)
 CIL_area = np.full((years.size,2), np.nan)
 for iyear, YEAR in enumerate(years):
     print (' -> '+ str(YEAR))
-    ## -------- Get CTD data -------- ##
+    ## Get CTD data
     year_file = '/home/cyrf0006/data/dev_database/netCDF/' + str(YEAR) + '.nc'
     print('Get ' + year_file)
     ds = xr.open_dataset(year_file)
 
     # Remame problematic datasets
-   # print('!!Remove MEDBA & MEDTE data!!')
-   # print('  ---> I Should be improved because I mayb remove good data!!!!')
     ds = ds.where(ds.instrument_ID!='MEDBA', drop=True)
     ds = ds.where(ds.instrument_ID!='MEDTE', drop=True)
 
@@ -127,7 +144,6 @@ for iyear, YEAR in enumerate(years):
     if ds.time.size == 0:
         print (' no data [skip]!')
         continue
-    
 
     # Extract temperature    
     da_temp = ds['temperature']
@@ -144,7 +160,6 @@ for iyear, YEAR in enumerate(years):
     lons = np.delete(lons,idx_empty_rows)
     lats = np.delete(lats,idx_empty_rows)
     print(' -> Done!')
-
 
     ## --- fill 3D cube --- ##  
     print('Fill regular cube')
@@ -274,14 +289,19 @@ for iyear, YEAR in enumerate(years):
         cil_vol_itp = np.nan
 
     CIL_area[iyear,:] = cil_vol_stn, cil_vol_itp
-
+    del ds, da, da_temp
+    plt.close('all')
+    
 df = pd.DataFrame(CIL_area)
 df.index = years
+
 # Manually flag some years (check section plots for justification) 
-if SECTION=='BB' & SEASON=='summer':
-    df.loc[flag_BB_summer]=np.nan
-if SECTION=='WB' & SEASON=='summer':
-    df.loc[flag_WB_summer]=np.nan
+if (SECTION=='BB') & (SEASON=='summer'):
+    for i in flag_BB_summer:        
+        df.loc[i]=np.nan
+if (SECTION=='WB') & (SEASON=='summer'):
+    for i in flag_WB_summer:        
+        df.loc[i]=np.nan
 
 # Save data in csv        
 df.columns = ['station-ID', 'interp_field']

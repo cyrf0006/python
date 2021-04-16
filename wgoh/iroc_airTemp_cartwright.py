@@ -24,8 +24,11 @@ Eventually, I could find a way to update directly from server (see azmp_airTemp.
 
 Frederic.Cyr@dfo-mpo.gc.ca - February 2019
 
-'''
+** Note from April 2021 **
+This script is now deprecated.
+See iroc_annual_update.py instead.
 
+'''
 
 import pandas as pd
 import matplotlib.pyplot as plt

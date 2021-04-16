@@ -10,55 +10,92 @@ import xarray as xr
 import datetime
 import os
 
-#import water_masses as wm
 
-font = {'family' : 'normal',
-        'weight' : 'bold',
-        'size'   : 14}
-plt.rc('font', **font)
+from echopype.model import EchoData
+data = EchoData('BonneBay2018-D20181002-T124111.nc')
+data.calibrate()
+data.remove_noise(save=True)  # Save denoised Sv
+data.get_MVBS(save=True)  # Save MVBS
+data = EchoData('BonneBay2018-D20181002-T133806.nc')
+data.calibrate()
+data.remove_noise(save=True)  
+data.get_MVBS(save=True)  
+data = EchoData('BonneBay2018-D20181002-T151840.nc')
+data.calibrate()
+data.remove_noise(save=True)  
+data.get_MVBS(save=True)
+
+# Polar night
+data = EchoData('/home/cyrf0006/orwell_data/acoustics/PolarNight17-D20170111-T003356.nc')
+data.calibrate()
+data.remove_noise(save=True)  
 
 
-## ---- Attempt to speed up ---- ##
-## if os.path.exists("./ds_avalon.nc"):
-##     print('Loading pickled file historical_temp_1948-2017.pkl')
-##     #    df_temp = pd.read_pickle('historical_temp_1948-2017.pkl') # 
-##     #    df_sal = pd.read_pickle('historical_sal_1948-2017.pkl') #
-##     ds = xr.open_dataset('ds_avalon.nc')
-    
-## else:
-##     print('historical_temp_1948-2017.pkl doesnt exist, will generate')   
-##     #This is a dataset
-##     ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/*.nc')
+# Single file
+ds = xr.open_dataset('BonneBay2018-D20181002-T124111_Sv.nc')
+ds = xr.open_dataset('BonneBay2018-D20181002-T124111_Sv_clean.nc')
+ds = xr.open_dataset('/home/cyrf0006/orwell_data/acoustics/PolarNight17-D20170111-T003356_Sv.nc')
+ds_denoised = xr.open_dataset('/home/cyrf0006/orwell_data/acoustics/PolarNight17-D20170111-T003356_Sv_clean.nc')
+# multiple files
+ds = xr.open_mfdataset('BonneBay*_Sv_clean.nc')
 
-##     # Select a depth range
-##     ds = ds.sel(level=ds['level']<500)
-##     ds = ds.sel(level=ds['level']>10)
+# Select frequency
+ds = ds.sel(frequency=ds['frequency']==120000.0).squeeze()
+ds_38 = ds.sel(frequency=ds['frequency']==38000.0).squeeze()
+ds_38dn = ds_denoised.sel(frequency=ds['frequency']==38000.0).squeeze()
+ds = ds.sel(frequency=ds['frequency']==120000.0).squeeze()
 
-##     # Selection of a subset region
-##     ds = ds.where((ds.longitude>-55) & (ds.longitude<-50), drop=True)
-##     #ds = ds.where((ds.latitude>50) & (ds.latitude<55), drop=True)
-##     ds = ds.where((ds.latitude>45) & (ds.latitude<50), drop=True)
 
-##     # Sort by time dimension
-##     ds = ds.sortby('time')
-##     ds.to_netcdf('ds_avalon.nc')
-##     print(' -> Done!')
+# Select a depth range
+ds = ds.sel(range_bin=ds['range_bin']<=1500)
 
-ds = xr.open_mfdataset('/home/cyrf0006/data/dev_database/netCDF/*.nc')
+# To Pandas Dataframe
+da = ds['Sv']
+df = da.to_pandas()
+
+da = ds_38['Sv']
+df_38 = da.to_pandas()
+da = ds_38dn['Sv_clean']
+df_38dn = da.to_pandas()
+
+df = df.resample('5min').mean()
+
+# To DataFrame for new custom made range_meter
+da = ds['Sv']
+df = da.to_pandas()
+# By-pass bin_range to range_meter
+df.columns = ds.range_meter
+
+plt.pcolormesh(df.index, df.columns, df.T, cmap=plt.cm.Greys)
+plt.gca().invert_yaxis()
+plt.show()
+
+ 
+
+# HERE!!!
+keyboard
+
+fname = 'BonneBay2018-D20181002-T124111.nc'
+ds = xr.open_dataset(fname, group='Beam')  # open file as an xarray DataSet
+data_120k = ds.backscatter_r.sel(frequency=120000)  # explicit indexing for frequency
+
+
+fname = '/home/cyrf0006/orwell_data/acoustics/Lake_Melville_winter2019-Phase0-D20190206-T140016-0.raw'
+fname = '/home/cyrf0006/orwell_data/acoustics/PolarNight17-D20170111-T003356.raw'
+ds = xr.open_dataset(fname, group='Beam')  # open file as an xarray DataSet
+data_120k = ds.backscatter_r.sel(frequency=120000)  # explicit indexing for frequency
+
+fname = '/home/cyrf0006/orwell_data/acoustics/Lake_Melville_winter2019-Phase0-D20190206-T140016-0.raw'
+fname = '/home/cyrf0006/orwell_data/acoustics/PolarNight17-D20170111-T003356.raw'
+data_tmp = ep.convert.ConvertEK60(fname)
+
+plt.pcolormesh(df.index, df.columns, df.T)
+plt.gca().invert_yaxis()
+plt.show()
 
 # Select a depth range
 ds = ds.sel(level=ds['level']<500)
 ds = ds.sel(level=ds['level']>10)
-
-# Selection of a subset region
-ds = ds.where((ds.longitude>-55) & (ds.longitude<-50), drop=True) # original one
-ds = ds.where((ds.latitude>45) & (ds.latitude<50), drop=True)
-
-# Sort by time dimension
-ds = ds.sortby('time')
-
-# Monthly average (This takes a lot of time given the sorting above)
-#ds_monthly = ds.resample('M', dim='time', how='mean') #deprecated
 
 # Monthly average
 ds = ds.sortby('time')
@@ -71,13 +108,10 @@ df_temp = da_temp.to_pandas()
 da_sal = ds_monthly['salinity']
 df_sal = da_sal.to_pandas()
 
-# For quick data check
-#df_temp.T.plot(linestyle='None', marker='.') 
-
 ## # Pickle data
-#df_temp.to_pickle('historical_temp_1948-2019.pkl') # 
-#df_sal.to_pickle('historical_sal_1948-2019.pkl') # 
-print(' -> Done!')
+## df_temp.to_pickle('historical_temp_1948-2017.pkl') # 
+## df_sal.to_pickle('historical_sal_1948-2017.pkl') # 
+## print(' -> Done!')
 
 
 # Compute climatology
@@ -108,26 +142,25 @@ keyboard
 ## --- CIL core --- ## 
 fig = plt.figure(1)
 plt.clf()
-#plt.plot(df_temp_may.index, df_temp_may.min(axis=1), '.')
+plt.plot(df_temp_may.index, df_temp_may.min(axis=1), '.')
 plt.plot(df_temp_june.index, df_temp_june.min(axis=1), '.')
 plt.plot(df_temp_july.index, df_temp_july.min(axis=1), '.')
-plt.plot(df_temp_aug.index, df_temp_aug.min(axis=1), '.')
 plt.plot(df_all.index, df_all.min(axis=1).rolling(5,center=True).mean(), 'k-', linewidth=3)
 
-#plt.legend(['May', 'June', 'July', '5y moving ave'], fontsize=15)
-plt.legend(['June', 'July', 'August', '5y moving ave'], fontsize=15)
+plt.legend(['May', 'June', 'July', '5y moving ave'], fontsize=15)
 plt.ylabel(r'$T_{min}$ in monthly mean profile ($^{\circ}$C)', fontsize=15, fontweight='bold')
 plt.xlabel('Year', fontsize=15, fontweight='bold')
 plt.title('CIL core temperature', fontsize=15, fontweight='bold')
-plt.xlim([pd.Timestamp('1948-01-01'), pd.Timestamp('2020-12-01')])
+plt.xlim([pd.Timestamp('1948-01-01'), pd.Timestamp('2017-01-01')])
 plt.ylim([-2, 1])
-#plt.xticks(pd.date_range('1950-01-01', periods=7, freq='10Y'))
+plt.xticks(pd.date_range('1950-01-01', periods=7, freq='10Y'))
 plt.grid('on')
 
 
 fig.set_size_inches(w=9,h=6)
-fig_name = 'CIL_core_1948-2020.png'
-fig.savefig(fig_name, dpi=300)
+fig_name = 'CIL_core_1948-2018.png'
+fig.set_dpi(300)
+fig.savefig(fig_name)
 
 
 
@@ -154,7 +187,7 @@ plt.xticks(pd.date_range('1950-01-01', periods=7, freq='10Y'))
 plt.grid('on')
 
 fig.set_size_inches(w=9,h=6)
-fig_name = 'CIL_core_1948-2019_SSB.png'
+fig_name = 'CIL_core_1948-2018_SSB.png'
 fig.set_dpi(300)
 fig.savefig(fig_name)
 
@@ -247,7 +280,6 @@ plt.gca().invert_yaxis()
 plt.ylabel('Depth (m)', fontsize=14, fontweight='bold')
 plt.xlabel('years', fontsize=14, fontweight='bold')
 cb = plt.colorbar()
-#cb.ax.set_ylabel('Years', fontsize=20, fontweight='bold')
 plt.title(r'$\rm S$', fontsize=14, fontweight='bold')
 fig.set_size_inches(w=12,h=9)
 fig_name = 'Scontours_1950-2016.png'

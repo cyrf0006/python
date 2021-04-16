@@ -23,7 +23,7 @@ import gsw
 
 
 # preamble
-year_clim = [1981, 2010]
+year_clim = [1991, 2020]
 
 #### ------------- T-S ---------------- ####
 # Load pickled data generated in azmp_stn27.py
@@ -172,10 +172,12 @@ plt.legend(['Carscadden1997', 'stn27_6NM radius', 'stn27_1.5NM radius'])
 #### ------------- MLD ---------------- ####
 MLD_monthly = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_MLD_monthly.pkl')
 MLD_monthly = MLD_monthly[MLD_monthly.index.year>=1950]
+MLD_apr = MLD_monthly[MLD_monthly.index.month==4]
 MLD_june = MLD_monthly[MLD_monthly.index.month==6]
 MLD_july = MLD_monthly[MLD_monthly.index.month==7]
 
 # Save MLD
+MLD_apr.index = MLD_apr.index.year
 MLD_june.index = MLD_june.index.year
 MLD_july.index = MLD_july.index.year
 MLD = pd.concat([MLD_june, MLD_july], axis=1, keys=['MLD June','MLD July'])
@@ -194,6 +196,20 @@ plt.title('Mixed Layer Depth')
 fig_name = 'MLD_stn27_June-July.png'
 fig.savefig(fig_name, dpi=300)
 
+# plot MLD
+plt.close('all')
+fig = plt.figure(1)
+ax = MLD_apr.rolling(5, min_periods=2).mean().plot(color='tab:blue',)
+MLD_june.rolling(5, min_periods=2).mean().plot(color='tab:orange',)
+MLD_july.rolling(5, min_periods=2).mean().plot(color='tab:red', ax=ax)
+plt.legend(['April', 'June','July'])
+MLD_apr.plot(color='tab:blue', marker = '.', linestyle = '', ax=ax)
+MLD_june.plot(color='tab:orange', marker = '.', linestyle = '', ax=ax)
+MLD_july.plot(color='tab:red', marker= '.', linestyle = '', ax=ax)
+plt.grid()
+plt.title('Mixed Layer Depth')
+fig_name = 'MLD_stn27_April-June-July.png'
+fig.savefig(fig_name, dpi=300)
 
 #### ------------- Stratification ---------------- ####
 strat_monthly = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_stratif_monthly.pkl')
@@ -216,7 +232,7 @@ strat = pd.concat([strat_feb, strat_mar, strat_apr, strat_may, strat_june, strat
                   keys=['strat February','strat March','strat April','strat May', 'strat June','strat July'])
 strat.to_csv('stn27_strat_Feb-July.csv', float_format='%.5f')
 
-strat_std_anom = (strat - strat[(strat.index>=1981) & (strat.index<=2010)].mean()) / strat[(strat.index>=1981) & (strat.index<=2010)].std()
+strat_std_anom = (strat - strat[(strat.index>=year_clim[0]) & (strat.index<=year_clim[1])].mean()) / strat[(strat.index>=year_clim[0]) & (strat.index<=year_clim[1])].std()
 strat_std_anom.to_csv('stn27_strat_anom_Feb-July.csv', float_format='%.5f')
 
 # plot stratification
@@ -225,11 +241,27 @@ fig = plt.figure(2)
 ax = strat_june.rolling(5, min_periods=2).mean().plot(color='tab:blue')
 strat_july.rolling(5, min_periods=2).mean().plot(color='tab:orange', ax=ax)
 plt.legend(['June','July'])
-ax.grid()
+plt.grid()
 strat_june.plot(color='tab:blue', marker = '.', linestyle = '', ax=ax)
 strat_july.plot(color='tab:orange', marker= '.', linestyle = '', ax=ax)
 plt.title('5-50m stratification')
 fig_name = 'strat_stn27_June-July.png'
+fig.savefig(fig_name, dpi=300)
+
+# plot stratification
+plt.close('all')
+fig = plt.figure(2)
+ax = strat_apr.rolling(5, min_periods=2).mean().plot(color='tab:blue')
+strat_june.rolling(5, min_periods=2).mean().plot(color='tab:orange')
+strat_july.rolling(5, min_periods=2).mean().plot(color='tab:red', ax=ax)
+plt.legend(['April','June','July'])
+strat_apr.plot(color='tab:blue', marker = '.', linestyle = '', ax=ax)
+strat_june.plot(color='tab:orange', marker = '.', linestyle = '', ax=ax)
+strat_july.plot(color='tab:red', marker= '.', linestyle = '', ax=ax)
+plt.title('5-50m stratification')
+fig_name = 'strat_stn27_April-June-July.png'
+plt.ylabel(r'$\rm \frac{\partial \rho}{\partial z}~[kg\,m^{-4}]$')
+plt.grid()
 fig.savefig(fig_name, dpi=300)
 
 #### ------------- Check robustness of data ---------------- ####

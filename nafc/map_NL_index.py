@@ -165,6 +165,11 @@ for reg in reg_toplot:
     reg_lon, reg_lat = m(ice_region[reg]['lon'], ice_region[reg]['lat'])
     m.plot(reg_lon, reg_lat, 'magenta', linestyle='--', linewidth=2, zorder=20)
 
+# Add Icebergs regions
+berg_lon, berg_lat = m([-60, -36, -36, -60, -60], [48, 48, 27, 27, 48])
+m.plot(berg_lon, berg_lat, 'cyan', linestyle='--', linewidth=2, zorder=20)
+
+    
 #### ---- Save Figure ---- ####
 fig.set_size_inches(w=10, h=12)
 fig.savefig(fig_name, dpi=200)
