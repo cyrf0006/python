@@ -34,7 +34,7 @@ dc = .05 # grid resolution
 v = np.arange(-2,13,1)
 
 # Years to flag
-flag_SI_summer = np.array([1981, 1989])
+flag_SI_summer = np.array([1928, 1981, 1989])
 flag_BB_summer = np.array([1981])
 flag_WB_summer = np.array([1953, 1956, 1959, 1962, 1980, 1982, 2019, 2020])
 flag_BB_summer = flag_BB_summer[(flag_BB_summer>=YEAR_MIN) & (flag_BB_summer<=YEAR_MAX)]
@@ -111,7 +111,7 @@ else:
     del Z, zz, z_vec, lon, lat, lon_grid_bathy, lon_vec_bathy, lat_vec_bathy
     print(' -> Done!')
 
-
+    
 ## --------- Loop on years -------- ####
 print('Loop on years')
 years = np.arange(YEAR_MIN, YEAR_MAX+1)
