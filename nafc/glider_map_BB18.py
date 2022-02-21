@@ -7,7 +7,10 @@ To do:
 - Flag wrong data...
 '''
 
+import os
+import h5py                                                                
 import netCDF4
+os.environ['PROJ_LIB'] = '/home/cyrf0006/anaconda3/share/proj'
 import xarray as xr
 from mpl_toolkits.basemap import Basemap
 import numpy as  np
@@ -20,7 +23,7 @@ from scipy.interpolate import RegularGridInterpolator as rgi
 import cmocean
 
 ## ---- Glider data ---- ##
-ds = xr.open_dataset('/home/cyrf0006/data/glider_sdata/SEA022/20181106/netcdf/SEA022_20181106_l2.nc')
+ds = xr.open_dataset('/home/cyrf0006/data/gliders_data/SEA022/20181106/netcdf/SEA022_20181106_l2.nc')
 ds = xr.open_dataset('/home/cyrf0006/data/gliders_data/SEA024/20190807/netcdf/SEA024_20190807_l2.nc')
 
 lons = np.array(ds.longitude)

@@ -5,6 +5,9 @@ to be run in /home/cyrf0006/research/WGOH/IROC
 
 **** See azmp_CIL_stats.py and merge both scripts into one more polyvalent****
 
+UPDATE from November 2021: seems that this script have now been fully implemented in azmp_CIL_stats.py and azmp_CIL_stats_update.py
+This script can therefore be removed from github.
+
 
 '''
 import os
@@ -21,10 +24,11 @@ import azmp_sections_tools as azst
 
 
 ## ---- Region parameters ---- ## <-------------------------------Would be nice to pass this in a config file '2017.report'
-SECTION = 'BB'
+SECTION = 'SI'
 SEASON = 'summer'
 YEAR_MIN = 1950
-YEAR_MAX = 2020
+YEAR_MAX = 2021
+YEAR_CLIM = [1991, 2020]
 
 dlat = 1 # how far from station we search
 dlon = 1
@@ -34,9 +38,11 @@ dc = .05 # grid resolution
 v = np.arange(-2,13,1)
 
 # Years to flag
-flag_SI_summer = np.array([1928, 1981, 1989])
-flag_BB_summer = np.array([1981])
-flag_WB_summer = np.array([1953, 1956, 1959, 1962, 1980, 1982, 2019, 2020])
+flag_SI_summer = np.array([1928, 1932, 1936, 1937, 1939, 1940, 1941, 1966, 1967, 1972, 1981, 1989])
+flag_BB_summer = np.array([1968])
+flag_WB_summer = np.arange(1950, 1973)
+flag_WB_summer = np.append(flag_WB_summer, [2011, 2019])       
+flag_WB_summer = flag_WB_summer[flag_WB_summer != 1960]
 flag_BB_summer = flag_BB_summer[(flag_BB_summer>=YEAR_MIN) & (flag_BB_summer<=YEAR_MAX)]
 flag_WB_summer = flag_WB_summer[(flag_WB_summer>=YEAR_MIN) & (flag_WB_summer<=YEAR_MAX)]
 
@@ -58,7 +64,7 @@ df_stn = pd.read_excel('/home/cyrf0006/github/AZMP-NL/data/STANDARD_SECTIONS.xls
 df_stn = df_stn.drop(['SECTION', 'LONG'], axis=1)
 df_stn = df_stn.rename(columns={'LONG.1': 'LON'})
 df_stn = df_stn.dropna()
-df_stn = df_stn[df_stn.STATION.str.contains(SECTION)]
+df_stn = df_stn[df_stn.STATION.str.contains(SECTION+'-')]
 df_stn = df_stn.reset_index(drop=True)
 if SECTION=='FC':
     df_stn = df_stn.iloc[0:25]
@@ -111,7 +117,190 @@ else:
     del Z, zz, z_vec, lon, lat, lon_grid_bathy, lon_vec_bathy, lat_vec_bathy
     print(' -> Done!')
 
-    
+
+## --------- Get climatology -------- ####
+clim_file = './df_' + SECTION + '_itp_clim.pkl'
+if os.path.isfile(clim_file):
+    print('Load saved climatology!')
+    df_section_itp_clim = pd.read_pickle('df_' + SECTION + '_itp_clim.pkl')
+    df_section_stn_clim = pd.read_pickle('df_' + SECTION + '_stn_clim.pkl')
+
+else:
+    print('Calculate climatology')
+    year_file = '/home/cyrf0006/data/dev_database/netCDF/*.nc'
+    ds = xr.open_mfdataset(year_file)
+
+    # Remove problematic datasets
+    ds = ds.where(ds.instrument_ID!='MEDBA', drop=True)
+    ds = ds.where(ds.instrument_ID!='MEDTE', drop=True)
+
+    # Select Region
+    ds = ds.where((ds.longitude>lonLims[0]) & (ds.longitude<lonLims[1]), drop=True)
+    ds = ds.where((ds.latitude>latLims[0]) & (ds.latitude<latLims[1]), drop=True)
+
+    # Select time (save several options here)
+    if SEASON == 'summer':
+        ds = ds.sel(time=((ds['time.month']>=6)) & ((ds['time.month']<=8)))
+    elif SEASON == 'spring':
+        ds = ds.sel(time=((ds['time.month']>=3)) & ((ds['time.month']<=5)))
+    elif SEASON == 'fall':
+        ds = ds.sel(time=((ds['time.month']>=9)) & ((ds['time.month']<=12)))
+    else:
+        print('!! no season specified, used them all! !!')
+
+    # Extract temperature    
+    da_temp = ds['temperature']
+    lons = np.array(ds.longitude)
+    lats = np.array(ds.latitude)
+    bins = np.arange(dz/2.0, 500, dz)
+    da_temp = da_temp.groupby_bins('level', bins).mean(dim='level')
+
+    #To Pandas Dataframe
+    df = da_temp.to_pandas()
+    df.columns = bins[0:-1] #rename columns with 'bins'
+
+    # Remove empty columns
+    idx_empty_rows = df.isnull().all(1).nonzero()[0]
+    df = df.dropna(axis=0,how='all')
+    lons = np.delete(lons,idx_empty_rows)
+    lats = np.delete(lats,idx_empty_rows)
+    del da_temp
+
+    # fill 3D cube
+    print('Fill regular cube')
+    z = df.columns.values
+    V = np.full((lat_reg.size, lon_reg.size, z.size), np.nan)
+    # Aggregate on regular grid
+    for i, xx in enumerate(lon_reg):
+        for j, yy in enumerate(lat_reg):    
+            idx = np.where((lons>=xx-dc/2) & (lons<xx+dc/2) & (lats>=yy-dc/2) & (lats<yy+dc/2))
+            tmp = np.array(df.iloc[idx].mean(axis=0))
+            idx_good = np.argwhere((~np.isnan(tmp)) & (tmp<30))
+            if np.size(idx_good)==1:
+                V[j,i,:] = np.array(df.iloc[idx].mean(axis=0))
+            elif np.size(idx_good)>1: # vertical interpolation between pts
+                interp = interp1d(np.squeeze(z[idx_good]), np.squeeze(tmp[idx_good]))  # <---- Attention: strange syntax but works
+                idx_interp = np.arange(np.int(idx_good[0]),np.int(idx_good[-1]+1))
+                V[j,i,idx_interp] = interp(z[idx_interp]) # interpolate only where possible (1st to last good idx)
+
+    # horizontal interpolation at each depth
+    lon_grid, lat_grid = np.meshgrid(lon_reg,lat_reg)
+    lon_vec = np.reshape(lon_grid, lon_grid.size)
+    lat_vec = np.reshape(lat_grid, lat_grid.size)
+    for k, zz in enumerate(z):
+        # Meshgrid 1D data (after removing NaNs)
+        tmp_grid = V[:,:,k]
+        tmp_vec = np.reshape(tmp_grid, tmp_grid.size)
+        #print 'interpolate depth layer ' + np.str(k) + ' / ' + np.str(z.size) 
+        # griddata (after removing nans)
+        idx_good = np.argwhere(~np.isnan(tmp_vec))
+        if idx_good.size>5: # At least N pts for interpolation
+            LN = np.squeeze(lon_vec[idx_good])
+            LT = np.squeeze(lat_vec[idx_good])
+            TT = np.squeeze(tmp_vec[idx_good])
+            zi = griddata((LN, LT), TT, (lon_grid, lat_grid), method='linear')
+            V[:,:,k] = zi
+        else:
+            continue
+    print(' -> Done!')    
+
+    # mask using bathymetry (I don't think it is necessary, but make nice figures)
+    for i, xx in enumerate(lon_reg):
+        for j,yy in enumerate(lat_reg):
+            if Zitp[j,i] > -10: # remove shallower than 10m
+                V[j,i,:] = np.nan
+
+    # Extract section info (test 2 options)
+    temp_coords = np.array([[x,y] for x in lat_reg for y in lon_reg])
+    VV = V.reshape(temp_coords.shape[0],V.shape[2])
+    ZZ = Zitp.reshape(temp_coords.shape[0],1)
+    section_only_clim = []
+    df_section_itp_clim = pd.DataFrame(index=stn_list, columns=z)
+    for stn in stn_list:
+        # 1. Section only (by station name)
+        ds_tmp = ds.where(ds.comments == stn, drop=True)  
+        section_only_clim.append(ds_tmp)
+        
+        #2.  From interpolated field (closest to station)
+        station = df_stn[df_stn.STATION==stn]
+        idx_opti = np.argmin(np.sum(np.abs(temp_coords - np.array(list(zip(station.LAT,station.LON)))), axis=1))
+        Tprofile = VV[idx_opti,:]
+
+        # remove data below bottom
+        bottom_depth = -ZZ[idx_opti]
+        Tprofile[z>=bottom_depth]=np.nan
+        # store in dataframe
+        df_section_itp_clim.loc[stn] = Tprofile
+
+    # convert option #1 to dataframe    
+    ds_section_clim = xr.concat(section_only_clim, dim='time')
+    da = ds_section_clim['temperature']
+    df_section_stn_clim = da.to_pandas()
+    df_section_stn_clim.index = ds_section_clim.comments.values
+    del ds, da
+
+    # Compute distance vector for option #1 - exact station
+    distance_stn = np.full((df_section_stn_clim.index.shape), np.nan)
+    for i, stn in enumerate(df_section_stn_clim.index):
+        distance_stn[i] = azst.haversine(df_stn.LON[0], df_stn.LAT[0], df_stn[df_stn.STATION==df_section_stn_clim.index[i]].LON, df_stn[df_stn.STATION==df_section_stn_clim.index[i]].LAT)
+
+    # Compute distance vector for option #2 - interp field
+    distance_itp = np.full((df_section_itp_clim.index.shape), np.nan)
+    for i, stn in enumerate(df_section_itp_clim.index):
+        distance_itp[i] = azst.haversine(df_stn.LON[0], df_stn.LAT[0], df_stn[df_stn.STATION==df_section_itp_clim.index[i]].LON, df_stn[df_stn.STATION==df_section_itp_clim.index[i]].LAT)
+
+    # Plot to check the result
+    XLIM = azst.haversine(df_stn.LON[0], df_stn.LAT[0],df_stn.iloc[-1].LON,df_stn.iloc[-1].LAT)
+    if df_section_stn_clim.index.size > 0:
+        fig, ax = plt.subplots()
+        c = plt.contourf(distance_stn, df_section_stn_clim.columns, df_section_stn_clim.T, v)
+        c_cil_stn = plt.contour(distance_stn, df_section_stn_clim.columns, df_section_stn_clim.T, [0,], colors='k', linewidths=2)
+        ax.set_ylim([0, 400])
+        ax.set_xlim([0,  XLIM])
+        ax.set_ylabel('Depth (m)', fontWeight = 'bold')
+        ax.set_xlabel('Distance (km)')
+        ax.invert_yaxis()
+        plt.colorbar(c)
+        fig.savefig('CIL_' + SECTION + '_clim_1.png', dpi=150)
+        plt.close()
+        # CIL area
+        cil_vol_stn = 0
+        CIL = c_cil_stn.collections[0]
+        for path in CIL.get_paths()[:]:
+            vs = path.vertices
+            cil_vol_stn = cil_vol_stn + np.abs(area(vs))/1000
+    else:
+        cil_vol_stn = np.nan
+
+    if df_section_itp_clim.index.size > 0:
+        fig, ax = plt.subplots()
+        c = plt.contourf(distance_itp, df_section_itp_clim.columns, df_section_itp_clim.T, v)
+        c_cil_itp = plt.contour(distance_itp, df_section_itp_clim.columns, df_section_itp_clim.T, [0,], colors='k', linewidths=2)
+        ax.set_ylim([0, 400])
+        ax.set_xlim([0,  XLIM])
+        ax.set_ylabel('Depth (m)', fontWeight = 'bold')
+        ax.set_xlabel('Distance (km)')
+        ax.invert_yaxis()
+        plt.colorbar(c)
+        fig.savefig('CIL_' + SECTION + '_clim_2.png', dpi=150)
+        plt.close()
+        # CIL area
+        cil_vol_itp = 0
+        CIL = c_cil_itp.collections[0]
+        for path in CIL.get_paths()[:]:
+            vs = path.vertices
+            cil_vol_itp = cil_vol_itp + np.abs(area(vs))/1000
+    else:
+        cil_vol_itp = np.nan
+
+    CIL_area_clim = [cil_vol_stn, cil_vol_itp]
+    plt.close('all')
+
+    # Save pickle
+    df_section_itp_clim.to_pickle('df_' + SECTION + '_itp_clim.pkl')
+    df_section_stn_clim.to_pickle('df_' + SECTION + '_stn_clim.pkl')
+
+
 ## --------- Loop on years -------- ####
 print('Loop on years')
 years = np.arange(YEAR_MIN, YEAR_MAX+1)
@@ -123,7 +312,7 @@ for iyear, YEAR in enumerate(years):
     print('Get ' + year_file)
     ds = xr.open_dataset(year_file)
 
-    # Remame problematic datasets
+    # Remove problematic datasets
     ds = ds.where(ds.instrument_ID!='MEDBA', drop=True)
     ds = ds.where(ds.instrument_ID!='MEDTE', drop=True)
 
@@ -159,13 +348,12 @@ for iyear, YEAR in enumerate(years):
     df = df.dropna(axis=0,how='all')
     lons = np.delete(lons,idx_empty_rows)
     lats = np.delete(lats,idx_empty_rows)
-    print(' -> Done!')
+    del da_temp
 
     ## --- fill 3D cube --- ##  
     print('Fill regular cube')
     z = df.columns.values
     V = np.full((lat_reg.size, lon_reg.size, z.size), np.nan)
-
     # Aggregate on regular grid
     for i, xx in enumerate(lon_reg):
         for j, yy in enumerate(lat_reg):    
@@ -175,9 +363,9 @@ for iyear, YEAR in enumerate(years):
             if np.size(idx_good)==1:
                 V[j,i,:] = np.array(df.iloc[idx].mean(axis=0))
             elif np.size(idx_good)>1: # vertical interpolation between pts
-                interp = interp1d(np.squeeze(z[idx_good]), np.squeeze(tmp[idx_good]))  # <---- Attention: strange syntax but works
+                interp = interp1d(np.squeeze(z[idx_good]), np.squeeze(tmp[idx_good]))
                 idx_interp = np.arange(np.int(idx_good[0]),np.int(idx_good[-1]+1))
-                V[j,i,idx_interp] = interp(z[idx_interp]) # interpolate only where possible (1st to last good idx)
+                V[j,i,idx_interp] = interp(z[idx_interp]) # interpolate 
 
     # horizontal interpolation at each depth
     lon_grid, lat_grid = np.meshgrid(lon_reg,lat_reg)
@@ -187,7 +375,6 @@ for iyear, YEAR in enumerate(years):
         # Meshgrid 1D data (after removing NaNs)
         tmp_grid = V[:,:,k]
         tmp_vec = np.reshape(tmp_grid, tmp_grid.size)
-        #print 'interpolate depth layer ' + np.str(k) + ' / ' + np.str(z.size) 
         # griddata (after removing nans)
         idx_good = np.argwhere(~np.isnan(tmp_vec))
         if idx_good.size>5: # At least N pts for interpolation
@@ -233,6 +420,7 @@ for iyear, YEAR in enumerate(years):
     da = ds_section['temperature']
     df_section_stn = da.to_pandas()
     df_section_stn.index = ds_section.comments.values
+    del ds, da
 
     # Compute distance vector for option #1 - exact station
     distance_stn = np.full((df_section_stn.index.shape), np.nan)
@@ -243,7 +431,13 @@ for iyear, YEAR in enumerate(years):
     distance_itp = np.full((df_section_itp.index.shape), np.nan)
     for i, stn in enumerate(df_section_itp.index):
         distance_itp[i] = azst.haversine(df_stn.LON[0], df_stn.LAT[0], df_stn[df_stn.STATION==df_section_itp.index[i]].LON, df_stn[df_stn.STATION==df_section_itp.index[i]].LAT)
-        
+
+    ## ---- Fill NaNs with climatology (new from April 2021) ---- ##
+    print('Fill NaNs with climatology')
+    df_section_itp_orig = df_section_itp.copy()
+    df_fill = df_section_itp_clim[df_section_itp_orig.isna()]
+    df_section_itp[df_section_itp_orig.isna()] = df_section_itp_clim[df_section_itp_orig.isna()]
+    
     ## ---- Plot to check the result ---- ##
     XLIM = azst.haversine(df_stn.LON[0], df_stn.LAT[0],df_stn.iloc[-1].LON,df_stn.iloc[-1].LAT)
     if df_section_stn.index.size > 0:
@@ -267,9 +461,11 @@ for iyear, YEAR in enumerate(years):
     else:
         cil_vol_stn = np.nan
 
+    # interpolation-based
     if df_section_itp.index.size > 0:
         fig, ax = plt.subplots()
-        c = plt.contourf(distance_itp, df_section_itp.columns, df_section_itp.T, v)
+        c = plt.contourf(distance_itp, df_section_itp.columns, df_section_itp.T, v, alpha=.75)
+        cfill = plt.contourf(distance_itp, df_section_itp.columns, df_section_itp_orig.T, v, alpha=.75)
         c_cil_itp = plt.contour(distance_itp, df_section_itp.columns, df_section_itp.T, [0,], colors='k', linewidths=2)
         ax.set_ylim([0, 400])
         ax.set_xlim([0,  XLIM])
@@ -289,7 +485,6 @@ for iyear, YEAR in enumerate(years):
         cil_vol_itp = np.nan
 
     CIL_area[iyear,:] = cil_vol_stn, cil_vol_itp
-    del ds, da, da_temp
     plt.close('all')
     
 df = pd.DataFrame(CIL_area)
@@ -299,10 +494,13 @@ df.index = years
 if (SECTION=='BB') & (SEASON=='summer'):
     for i in flag_BB_summer:        
         df.loc[i]=np.nan
-if (SECTION=='WB') & (SEASON=='summer'):
+elif (SECTION=='WB') & (SEASON=='summer'):
     for i in flag_WB_summer:        
         df.loc[i]=np.nan
-
+elif (SECTION=='SI') & (SEASON=='summer'):
+    for i in flag_SI_summer:        
+        df.loc[i]=np.nan
+        
 # Save data in csv        
 df.columns = ['station-ID', 'interp_field']
 outfile = 'CIL_area_' + SECTION + '.csv'

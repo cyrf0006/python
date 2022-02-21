@@ -64,7 +64,7 @@ def main(interval,azimuth,lat1,lng1,lat2,lng2):
     counter = float(interval)
     coords = []
     coords.append([lat1,lng1])
-    for distance in xrange(0,int(dist)):
+    for distance in range(0,int(dist)):
         coord = getDestinationLatLong(lat1,lng1,azimuth,counter)
         counter = counter + float(interval)
         coords.append(coord)

@@ -121,14 +121,14 @@ plt.clabel(cc, inline=True, fontsize=7, fmt='%i')
 beach = df.Short_name.values
 lats = df.Lat.values
 lons = df.Long.values
-ax.plot(lons, lats, '.', color='palevioletred', transform=ccrs.PlateCarree(), markersize=10, zorder=10)
+ax.plot(lons, lats, '.', color='magenta', transform=ccrs.PlateCarree(), markersize=13, zorder=10)
 
 # research Beaches
 res_beach = df[(df.Short_name=="Bryant's Cove") | (df.Short_name=="Bellevue Beach")]
-ax.plot(res_beach.Long, res_beach.Lat, '*', color='green', transform=ccrs.PlateCarree(), markersize=15, zorder=10)
+ax.plot(res_beach.Long, res_beach.Lat, '*', color='lime', transform=ccrs.PlateCarree(), markersize=16, zorder=10)
 
 # Plot stn 27
-ax.plot(s27[1], s27[0], '*', color='red', transform=ccrs.PlateCarree(), markersize=15, zorder=10)
+ax.plot(s27[1], s27[0], '*', color='red', transform=ccrs.PlateCarree(), markersize=16, zorder=10)
 
 # Identify name of the Bays
 ax.text(CB[1], CB[0], 'CB', horizontalalignment='center', verticalalignment='center', fontsize=10, color='black', fontweight='bold', transform=ccrs.PlateCarree(), zorder=10)
@@ -145,8 +145,8 @@ ax.text(-57, 52.15, 'Labrador', horizontalalignment='center', verticalalignment=
 
 # Custom legend
 import matplotlib.lines as mlines
-legend_elements = [mlines.Line2D([],[], marker='.',linestyle='None', color='palevioletred', markersize=15, label='Diary Beach'),
-                   mlines.Line2D([],[], marker='*',linestyle='None', color='green', markersize=15, label='Research Beach'),
+legend_elements = [mlines.Line2D([],[], marker='.',linestyle='None', color='magenta', markersize=15, label='Diary Beach'),
+                   mlines.Line2D([],[], marker='*',linestyle='None', color='lime', markersize=15, label='Research Beach'),
                    mlines.Line2D([],[], marker='*',linestyle='None', color='red', markersize=15, label='Stn 27')]
 ax.legend(handles=legend_elements)
 
