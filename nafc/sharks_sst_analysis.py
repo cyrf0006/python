@@ -23,14 +23,14 @@ from plotly.graph_objs import *
 import cmocean
 import os
 
-YEAR_MAX = 2022
+YEAR_MAX = 2020
 
 
 ## Load pickled SST per polygons
-df_W = pd.read_pickle('sst_west_coast_method2.pkl')
-df_S = pd.read_pickle('sst_south_coast_method2.pkl')
-df_NE = pd.read_pickle('sst_northeast_coast_method2.pkl')
-df_A = pd.read_pickle('sst_avalon_method2.pkl')
+df_W = pd.read_pickle('/home/cyrf0006/research/lobster/sst_west_coast_method2.pkl')
+df_S = pd.read_pickle('/home/cyrf0006/research/lobster/sst_south_coast_method2.pkl')
+df_NE = pd.read_pickle('/home/cyrf0006/research/lobster/sst_northeast_coast_method2.pkl')
+df_A = pd.read_pickle('/home/cyrf0006/research/lobster/sst_avalon_method2.pkl')
 # Reset index (set time)
 df_W.reset_index(inplace=True)
 df_S.reset_index(inplace=True)
@@ -97,7 +97,6 @@ for name in regions:
     plt.ylabel('Standardized anomaly')
     plt.title(name)
     plt.ylim([-3, 3])
-    plt.xlim([1980, 2022.5])
     plt.grid()
     # Save Figure
     fig.set_size_inches(w=7,h=4)
@@ -132,30 +131,27 @@ anom_std_all = (days_above-clim_mean) / clim_std
 # Plot anomaly
 regions = ['West_Coast', 'Avalon', 'Northeast_Coast', 'South_Coast']
 
+# Absolute Numbers
 for name in regions:
-    anom_std = anom_std_all[name]
-    df1 = anom_std[anom_std>0]
-    df2 = anom_std[anom_std<0]
+    da12 = days_above[name]
     fig = plt.figure(1)
     fig.clf()
     width = .7
-    p1 = plt.bar(df1.index, np.squeeze(df1.values), width, alpha=0.8, color='indianred', zorder=10)
-    p2 = plt.bar(df2.index, np.squeeze(df2.values), width, bottom=0, alpha=0.8, color='steelblue', zorder=10)
-    plt.text(1981, 2.4, r'$\rm \overline{X}_{1991-2020}=$' + str(np.int(np.round(clim_mean[name]))) + r'$\rm~\pm~$' + str(np.int(np.round(clim_std[name]))) + r' days' )
-    plt.ylabel('Standardized anomaly')
+    p1 = plt.bar(da12.index, np.squeeze(da12.values), width, alpha=0.8, color='steelblue', zorder=10)
+    plt.ylabel('Days >12')
     plt.title(name)
-    plt.ylim([-3, 3])
-    plt.xlim([1980, 2022.5])
+    #plt.ylim([-3, 3])
+    plt.xlim([1980, 2021])
     plt.grid()
     # Save Figure
     fig.set_size_inches(w=7,h=4)
-    fig_name = 'lfa_days_above12_anomaly_' + name + '.png'
+    fig_name = 'lfa_days_above12_' + name + '.png'
     fig.savefig(fig_name, dpi=300)
     os.system('convert -trim ' + fig_name + ' ' + fig_name)
-    del df1, df2, anom_std
+    del da12
 
 del  clim_mean, clim_std, anom_std_all
-
+    
 #### ---- Days above 15---- ####
 # Reload
 ## Daily averages (get rid of lat/lon columns)
@@ -193,32 +189,29 @@ anom_std_all = (days_above-clim_mean) / clim_std
 # Plot anomaly
 regions = ['West_Coast', 'Avalon', 'Northeast_Coast', 'South_Coast']
 
+# Absolute Numbers
 for name in regions:
-    anom_std = anom_std_all[name]
-    df1 = anom_std[anom_std>0]
-    df2 = anom_std[anom_std<0]
+    da15 = days_above[name]
     fig = plt.figure(1)
     fig.clf()
     width = .7
-    p1 = plt.bar(df1.index, np.squeeze(df1.values), width, alpha=0.8, color='indianred', zorder=10)
-    p2 = plt.bar(df2.index, np.squeeze(df2.values), width, bottom=0, alpha=0.8, color='steelblue', zorder=10)
-    if clim_mean[name]>0:
-        plt.text(1981, 2.4, r'$\rm \overline{X}_{1991-2020}=$' + str(np.int(np.round(clim_mean[name]))) + r'$\rm~\pm~$' + str(np.int(np.round(clim_std[name]))) + r' days' )
-    else:
-        plt.text(1981, 2.4, r'N/A')
-    plt.ylabel('Standardized anomaly')
+    p1 = plt.bar(da15.index, np.squeeze(da15.values), width, alpha=0.8, color='steelblue', zorder=10)
+    plt.ylabel('Days >15')
     plt.title(name)
-    plt.ylim([-3, 3])
-    plt.xlim([1980, 2022.5])
+    #plt.ylim([-3, 3])
+    plt.xlim([1980, 2021])
     plt.grid()
     # Save Figure
     fig.set_size_inches(w=7,h=4)
-    fig_name = 'lfa_days_above15_anomaly_' + name + '.png'
+    fig_name = 'lfa_days_above15_' + name + '.png'
     fig.savefig(fig_name, dpi=300)
     os.system('convert -trim ' + fig_name + ' ' + fig_name)
-    del df1, df2, anom_std
+    del da15
 
 del  clim_mean, clim_std, anom_std_all
+
+
+keyboard
 
 #### ---- Days above 12 / below 18 ---- ####
 # Reload
@@ -270,7 +263,6 @@ for name in regions:
     plt.ylabel('Standardized anomaly')
     plt.title(name)
     plt.ylim([-3, 3])
-    plt.xlim([1980, 2022.5])
     plt.grid()
     # Save Figure
     fig.set_size_inches(w=7,h=4)
@@ -329,7 +321,6 @@ for idx, name in enumerate(regions):
     plt.ylabel('Normalized anomaly')
     plt.title(region_name_EN[idx])
     plt.ylim([-3, 3])
-    plt.xlim([1980, 2022.5])
     plt.grid()
     # Save Figure
     fig.set_size_inches(w=7,h=4)
@@ -392,7 +383,6 @@ for name in regions:
     plt.ylabel('Standardized anomaly')
     plt.title(name)
     plt.ylim([-3, 3])
-    plt.xlim([1980, 2022.5])
     plt.grid()
     # Save Figure
     fig.set_size_inches(w=7,h=4)

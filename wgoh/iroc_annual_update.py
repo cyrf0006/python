@@ -15,23 +15,23 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
 
-clim_years = [1981, 2010]
-year = 2020
+clim_years = [1991, 2020]
+year = 2021
 
 ## -- 1. Air T Cartwright -- ##
-airT = pd.read_pickle('~/AZMP/state_reports/airTemp/airT_anom81.pkl')
+airT = pd.read_pickle('~/AZMP/state_reports/airTemp/airT_anom.pkl')
 airT = airT[['Cartwright']]
 airT = airT[airT.index>=1935]
 airT.to_csv('iroq_airT_Cartwright.csv', sep=',', float_format='%.2f')
 # ** need to manually paste iroq_airT_Cartwright.csv into Newf_Cartwright_Air_Timeseries.csv
-airT_std = pd.read_pickle('~/AZMP/state_reports/airTemp/airT_std_anom81.pkl')
+#airT_std = pd.read_pickle('~/AZMP/state_reports/airTemp/airT_std_anom.pkl')
 
 
 ## -- 2. CIL data -- ##
 # ** need to run iroc_CIL_area.py for 'BB' and 'SI'
 # **** HERE, should load .csv file in ~/AZMP/state_reports/sections_plots/CIL since 2021!! (note from 21 Nov. 2021)
-df_BB = pd.read_csv('/home/cyrf0006/research/WGOH/IROC/CIL_area_BB.csv')
-df_SI = pd.read_csv('/home/cyrf0006/research/WGOH/IROC/CIL_area_SI.csv')
+df_BB = pd.read_csv('/home/cyrf0006/AZMP/state_reports/sections_plots/CIL/CIL_area_BB.csv')
+df_SI = pd.read_csv('/home/cyrf0006/AZMP/state_reports/sections_plots/CIL/CIL_area_SI.csv')
 df_BB.set_index('Unnamed: 0', inplace=True)
 df_SI.set_index('Unnamed: 0', inplace=True)
 # select interp field

@@ -1,18 +1,21 @@
 
+import os
 import netCDF4
+os.environ['PROJ_LIB'] = '/home/cyrf0006/anaconda3/share/proj'
 from mpl_toolkits.basemap import Basemap
 import numpy as  np
 import matplotlib.pyplot as plt
 import openpyxl, pprint
+import h5py                                                                
 
 import math
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 from matplotlib.patches import Polygon
-import os
+import shapefile 
 
 ## ---- Region parameters ---- ##
-dataFile = '/home/cyrf0006/data/GEBCO/GRIDONE_1D.nc'
+dataFile = '/home/cyrf0006/data/GEBCO/GEBCO_2014_1D.nc'
 lon_0 = -50
 lat_0 = 50
 lonLims = [-56, -48]
@@ -24,32 +27,88 @@ fig_name = 'map_swot_zoom.png'
 ephem = '/home/cyrf0006/AZMP/utils/ephem_calval.txt'
 swot_kml = 'SWOT_Science_sept2015_Swath_10_60.kml'
 
-## ---- Bathymetry ---- ####
+## ----  MPAS / DFO closures shapefile ---- ##
+sf = shapefile.Reader('/home/cyrf0006/research/MPAs/Warren_shapefiles/RV_CSAS_closures_GCS')
+records_mpas = sf.records()
+shapes = sf.shapes()
+# Fill dictionary with closures (named MPAs for simplicity)
+mpas = {}
+for idx, rec in enumerate(records_mpas):
+    if rec[0] == '':
+        continue
+    else:
+        print(rec)
+        mpas[rec[0]] = np.array(shapes[idx].points)
+
+## ---- Bathymetry ---- ##
+print('Load and grid bathymetry')
+# h5 file
+h5_outputfile = 'swot_bathymetry.h5'
+if os.path.isfile(h5_outputfile):
+     print([h5_outputfile + ' exists! Reading directly'])
+     h5f = h5py.File(h5_outputfile,'r')
+     lon = h5f['lon'][:]
+     lat = h5f['lat'][:]
+     Z = h5f['Z'][:]
+     h5f.close()
+
+else:
+    # Extract variables
+    dataset = netCDF4.Dataset(dataFile)
+    x = [-179-59.75/60, 179+59.75/60] # to correct bug in 30'' dataset?
+    y = [-89-59.75/60, 89+59.75/60]
+    spacing = dataset.variables['spacing']
+
+    # Compute Lat/Lon
+    nx = int((x[-1]-x[0])/spacing[0]) + 1  # num pts in x-dir
+    ny = int((y[-1]-y[0])/spacing[1]) + 1  # num pts in y-dir
+    lon = np.linspace(x[0],x[-1],nx)
+    lat = np.linspace(y[0],y[-1],ny)
+    # Reshape data
+    zz = dataset.variables['z']
+    Z = zz[:].reshape(ny, nx)
+    Z = np.flipud(Z) # <------------ important!!!
+    # Reduce data according to Region params
+    idx_lon = np.where((lon>=lonLims[0]) & (lon<=lonLims[1]))
+    idx_lat = np.where((lat>=latLims[0]) & (lat<=latLims[1]))
+    Z = Z[idx_lat[0][0]:idx_lat[0][-1]+1, idx_lon[0][0]:idx_lon[0][-1]+1]
+    lon = lon[idx_lon[0]]
+    lat = lat[idx_lat[0]]
+
+    # Save data for later use
+    h5f = h5py.File(h5_outputfile, 'w')
+    h5f.create_dataset('lon', data=lon)
+    h5f.create_dataset('lat', data=lat)
+    h5f.create_dataset('Z', data=Z)
+    h5f.close()
+    print(' -> Done!')
+
+##     ## ---- Bathymetry ---- ####
 v = np.linspace(-400, 0, 9)
 
-# Load data
-dataset = netCDF4.Dataset(dataFile)
+## # Load data
+## dataset = netCDF4.Dataset(dataFile)
 
-# Extract variables
-x = dataset.variables['x_range']
-y = dataset.variables['y_range']
-spacing = dataset.variables['spacing']
+## # Extract variables
+## x = dataset.variables['x_range']
+## y = dataset.variables['y_range']
+## spacing = dataset.variables['spacing']
 
-# Compute Lat/Lon
-nx = int((x[-1]-x[0])/spacing[0]) + 1  # num pts in x-dir
-ny = int((y[-1]-y[0])/spacing[1]) + 1  # num pts in y-dir
+## # Compute Lat/Lon
+## nx = int((x[-1]-x[0])/spacing[0]) + 1  # num pts in x-dir
+## ny = int((y[-1]-y[0])/spacing[1]) + 1  # num pts in y-dir
 
-lon = np.linspace(x[0],x[-1],nx)
-lat = np.linspace(y[0],y[-1],ny)
+## lon = np.linspace(x[0],x[-1],nx)
+## lat = np.linspace(y[0],y[-1],ny)
 
-# Reshape data
-zz = dataset.variables['z']
-Z = zz[:].reshape(ny, nx)
+## # Reshape data
+## zz = dataset.variables['z']
+## Z = zz[:].reshape(ny, nx)
 
-# Reduce data according to Region params
-lon = lon[::decim_scale]
-lat = lat[::decim_scale]
-Z = Z[::decim_scale, ::decim_scale]
+## # Reduce data according to Region params
+## lon = lon[::decim_scale]
+## lat = lat[::decim_scale]
+## Z = Z[::decim_scale, ::decim_scale]
 
 ## ---- Station info ---- ##
 import pandas as pd
@@ -100,8 +159,8 @@ fig = plt.figure(1)
 #m = Basemap(projection='ortho',lon_0=lon_0,lat_0=lat_0,resolution=None)
 m = Basemap(projection='merc',lon_0=lon_0,lat_0=lat_0, llcrnrlon=lonLims[0],llcrnrlat=latLims[0],urcrnrlon=lonLims[1],urcrnrlat=latLims[1], resolution='h')
 x,y = m(*np.meshgrid(lon,lat))
-c = m.contourf(x, y, np.flipud(Z), v, cmap=plt.cm.PuBu_r, extend="min");
-cc = m.contour(x, y, np.flipud(-Z), [50, 100, 200, 400], colors='lightgrey', linewidths=.5);
+c = m.contourf(x, y, Z, v, cmap=plt.cm.PuBu_r, extend="min");
+cc = m.contour(x, y, -Z, [50, 100, 200, 400], colors='lightgrey', linewidths=.5);
 plt.clabel(cc, inline=1, fontsize=10, colors='gray', fmt='%d')
 m.fillcontinents(color='grey');
 m.drawparallels(np.arange(10,70,2), labels=[1,0,0,0], fontsize=12, fontweight='bold');
@@ -163,6 +222,24 @@ M3 = m(-52.7, 49.5)
 x, y = m(stationLon[index_S27],stationLat[index_S27])
 m.scatter(x[0],y[0],60,marker='*',color='r', zorder=10)
 plt.text(x[0], y[0], 'Stn-27  ', horizontalalignment='right', verticalalignment='center', fontsize=10, color='r', fontweight='bold')
+
+# by-pass previous mooring position with update in Funck Isl. deep
+#M1 = m(-(52 + 47.67350/60), 50+46.667/60)
+#M1 = m(-(53 + 0.2522/60), 50+46.667/60)
+#M1 = m(-(53 + 0.2522/60), 50.1)
+#M2 = m(-(53 + 0.2522/60), 49+42.472/60)
+
+# Scenario 1
+M1 = m(-(53), 50)
+M2 = m(-(53), 49+45/60)
+M3 = m(-(52 + 35/60), 49+45/60)
+
+# Scenario 2
+M1 = m(-(53), 50+45/60)
+#M2 = m(-(53.5), 50)
+M2 = m(-(53.25), 50+10/60)
+M3 = m(-(52 + 35/60), 49+45/60)
+
 m.scatter(M1[0],M1[1], 60, marker='*',color='m', zorder=10)
 m.scatter(M2[0],M2[1], 60, marker='*',color='m', zorder=10)
 m.scatter(M3[0],M3[1], 60, marker='*',color='m', zorder=10)
@@ -231,7 +308,13 @@ for i in range(0,len(swot_segment_lat)):
 ## xy = np.array(list(zip(x,y)))
 ## poly = Polygon(xy, facecolor='green', alpha=0.4)
 ## plt.gca().add_patch(poly)
-    
+
+# plot Funk Island deep and Hawke No. 9 & 14
+coords = mpas[9]  
+poly_x, poly_y = m(coords[:,0], coords[:,1])
+m.plot(poly_x, poly_y, 'cyan', alpha=0.8, linewidth=2, zorder=100)
+
+
 #### ---- Save Figure ---- ####
 fig.set_size_inches(w=8, h=9)
 fig.savefig(fig_name, dpi=200)

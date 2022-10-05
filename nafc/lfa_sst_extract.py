@@ -1,6 +1,12 @@
-# data source: https://www.esrl.noaa.gov/psd/data/gridded/data.ncep.reanalysis.surface.html
-# https://www.esrl.noaa.gov/psd/cgi-bin/db_search/DBListFiles.pl?did=195&tid=71800&vid=676
+# URL example:
+# ftp://ftp.cdc.noaa.gov/Datasets/noaa.oisst.v2.highres/sst.day.mean.1981.nc
+#
+# For CSAS input, I need to
+# 1. update files based on above links
+# 2. Run this script
+# 3. lfa_sst_analysis.py
 
+    
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
