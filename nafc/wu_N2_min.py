@@ -174,6 +174,10 @@ bloom.set_index('Year', inplace=True)
 # Modis vs SeaWiFS
 #bloom_modis = bloom[bloom.Sensor=='Modis 4km']
 
+## Load bloom param for Avalon Channel only 
+bloom_AC = pd.read_csv('SpringBloom_parameters.csv') 
+bloom_AC = bloom_AC.groupby('year').mean()  
+    
 ## Load MDL data
 df_MLD = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_MLD_raw.pkl')
 if weekly_average:
@@ -183,82 +187,6 @@ if weekly_average:
 df_ = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/stn27/S27_MLD_raw.pkl')
 if weekly_average:
     df_MLD = df_MLD.resample('W').mean()
-    
-## ## ---- Stratification Climatology Figure ---- ##
-## df_doy = df_strat.copy()
-## df_doy = df_doy[(df_doy.index.year>=1991) & (df_doy.index.year<=2020)]
-## df_doy.index = df_doy.index.dayofyear
-## df_doy = df_doy.groupby('time').mean()
-## df_doy = df_doy.interpolate()
-## # plot
-## plt.close('all')
-## fig, ax = plt.subplots(nrows=1, ncols=1)
-## df_doy.plot(linestyle=' ', marker='.')    
-## df_doy.rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='orange')
-## plt.ylabel(r'$\rm d \sigma_0 / dz$', color='orange')
-## plt.xlabel('DOY')
-## if add_TS:
-##     Ts_doy = strat_T.copy()
-##     Ss_doy = strat_S.copy()
-##     Ts_doy = Ts_doy[(Ts_doy.index.year>=1991) & (Ts_doy.index.year<=2020)]
-##     Ss_doy = Ss_doy[(Ss_doy.index.year>=1991) & (Ss_doy.index.year<=2020)]
-##     # Interpolate T
-##     Ts_doy.index = Ts_doy.index.dayofyear
-##     Ts_doy = Ts_doy.groupby('time').mean()
-##     #Ts_doy = np.sqrt(Ts_doy) # squareroot
-##     Ts_doy = Ts_doy.interpolate()
-##     # Interpolate S
-##     Ss_doy.index = Ss_doy.index.dayofyear
-##     Ss_doy = Ss_doy.groupby('time').mean()
-##     #Ss_doy = np.sqrt(Ss_doy) # squareroot
-##     Ss_doy = Ss_doy.interpolate()
-##     # plot
-##     if use_N2:
-##         ax2=ax
-##         ax2.set_ylabel(r'$log_{10}(N, N_T, N_S~/~s^{-1})$', color='black')
-##         ax2.set_yscale('log')
-##         YLIM = [1e-8, 5e-4]
-##     else:
-##         ax2 = ax.twinx()
-##         YLIM = [.005, .032]      
-##     Ts_doy.rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='red')
-##     Ss_doy.rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='blue')
-
-## if add_MLD:
-##     mld_doy = df_MLD.copy()
-##     mld_doy = mld_doy[(mld_doy.index.year>=1991) & (mld_doy.index.year<=2020)]
-##     mld_doy.index = mld_doy.index.dayofyear
-##     mld_doy = mld_doy.groupby('time').mean()
-##     mld_doy = mld_doy.interpolate()
-##     # plot
-##     ax3 = ax.twinx()
-##     # move the the second axes outwards
-##     #ax3.spines["right"].set_position(("axes", 1.2))
-##     mld_doy.plot(ax=ax3, linestyle=' ', marker='.', color='cyan')    
-##     mld_doy.rolling(30, center=True).mean().plot(ax=ax3, linestyle='-', linewidth=3, color='darkgray')
-##     ax3.set_ylabel('MLD (m)', color='darkgray')
-##     ax3.invert_yaxis()
-
-## # Load bloom timing
-## bloomt = pd.read_csv('MeanTimingMax.csv')
-## bloomt.set_index('Region', inplace=True)
-## doy = bloomt.loc[REGION]
-## init = pd.to_datetime(1900 * 1000 + doy.meanIniation, format='%Y%j')
-## init_low = init - timedelta(days=doy['sdIni'])
-## init_high = init + timedelta(doy['sdIni'])
-## ax.fill_between([init_low.dayofyear, init_high.dayofyear], [YLIM[0], YLIM[0]], [YLIM[1], YLIM[1]], facecolor='green', interpolate=True , alpha=.3)
-## max = pd.to_datetime(1900 * 1000 + doy.meanMax, format='%Y%j')
-## max_low = max - timedelta(days=doy['sdMax'])
-## max_high = max + timedelta(doy['sdMax'])
-## ax.fill_between([max_low.dayofyear, max_high.dayofyear], [YLIM[0], YLIM[0]], [YLIM[1], YLIM[1]], facecolor='red', interpolate=True , alpha=.3)
-## ax.set_ylim(YLIM)
-## plt.grid()
-## # Save Figure
-## fig.set_size_inches(w=8, h=6)
-## outfile_year = 'Climatological_strat.png'
-## fig.savefig(outfile_year, dpi=200)
-## os.system('convert -trim ' + outfile_year + ' ' + outfile_year)
-
 
 ## --- Annual plot + fit --- ##
 years = np.arange(1950, 2017)

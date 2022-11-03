@@ -82,7 +82,6 @@ bloom.set_index('Year', inplace=True)
 # Modis vs SeaWiFS
 #bloom_modis = bloom[bloom.Sensor=='Modis 4km']
 
-    
 ## Gaussian Fit.
 years = np.arange(1998, 2017)
 bloom_predict = years*np.nan

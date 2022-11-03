@@ -16,9 +16,9 @@ nlci.set_index('Year', inplace=True)
 
 ## Load Capelin biomass data USSR
 df_cap2 = pd.read_csv('/home/cyrf0006/data/capelin/Fig2_capelin_biomass_1975_2019.csv', index_col='year')
-#df_cap2_spring = df_cap2[(df_cap2.area=='spring acoustic') | (df_cap2.area=='ussr spring acoustic')] # spring only
+df_cap2_spring = df_cap2[(df_cap2.area=='spring acoustic') | (df_cap2.area=='ussr spring acoustic')] # spring only
 df_cap2_spring = df_cap2[(df_cap2.area=='spring acoustic')] # spring only
-df_cap2_fall = df_cap2[(df_cap2.area=='fall acoustic') | (df_cap2.area=='ussr fall acoustic')] # fall only
+#df_cap2_fall = df_cap2[(df_cap2.area=='fall acoustic') | (df_cap2.area=='ussr fall acoustic')] # fall only
 # ALL
 df_cap2 = df_cap2['biomass ktonnes'].sort_index()
 df_cap2 = df_cap2.groupby(['year']).mean()
@@ -127,7 +127,8 @@ df_PP.plot(ax=ax2, color='Green', linewidth=3, alpha=.6)
 ax2.legend(['Net Primary Production'])
 plt.ylabel(r'PP ($\rm mgC\,m^{-3}\,d^{-1}$)', color='green')
 plt.title('Global ocean biogeochemistry hindcast')
-for years in years_list:
+ax.set_xlim([1975, 2020])
+for years in years_list[:-1]:
     PP_tmp = df_PP[(df_PP.index>=years[0]) & (df_PP.index<=years[1])]
     if len(PP_tmp)>0:
         ax2.plot([years[0], years[1]], [PP_tmp.mean().values, PP_tmp.mean().values], linestyle='--', color='green', linewidth=2)
@@ -138,8 +139,13 @@ fig.savefig(fig_name, dpi=150)
 os.system('convert -trim ' + fig_name + ' ' + fig_name)
 
 ## Zooplankton
+# Anomalies
 df_cal = pd.read_csv('/home/cyrf0006/research/PeopleStuff/BelangerStuff/CorrelationData.csv', index_col='Year')
 df_cal = df_cal['calfin']
+# Abundance
+df_cal_ab = pd.read_csv('/home/cyrf0006/research/PeopleStuff/BelangerStuff/CALFIN_abundance.csv', index_col='Year')
+df_cal_ab = df_cal_ab['Mean abundance (log10 ind. m-2)']
+
 fig, ax = plt.subplots(nrows=1, ncols=1)
 nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
 plt.grid('on')
@@ -148,14 +154,16 @@ for years in years_list:
     plt.plot([years[0], years[0]], [-2, 10], '--k')
 ax.set_ylim([-2, 10])
 ax2 = ax.twinx()
-df_cal.plot(ax=ax2, color='tab:brown', linewidth=3, alpha=.6)
+df_cal_ab.plot(ax=ax2, color='tab:brown', linewidth=3, alpha=.6)
 ax2.legend(['Calfin'])
-plt.ylabel(r'Standardized anomaly', color='tab:brown')
+plt.ylabel(r'$\rm log_{10}(ind\,m^{-2})$', color='tab:brown')
 plt.title('2J3KLNO Calanus finmarchicus abundance')
+ax2.set_ylim([8.5, 9.5])
 for years in years_list:
-    cal_tmp = df_cal[(df_cal.index>=years[0]) & (df_cal.index<=years[1])]
+    cal_tmp = df_cal_ab[(df_cal_ab.index>=years[0]) & (df_cal_ab.index<=years[1])]
     if len(cal_tmp)>0:
         ax2.plot([years[0], years[1]], [cal_tmp.mean(), cal_tmp.mean()], linestyle='--', color='tab:brown', linewidth=2)
+ax.set_xlim([1975, 2021])
 # Save fig
 fig.set_size_inches(w=8, h=6)
 fig_name = 'calanus_ruptures.png'
@@ -178,12 +186,13 @@ ax2.legend(['multispecies'])
 plt.ylabel(r'biomass density ($\rm t\,km^{-2}$)', color='red')
 plt.title('Multispecies scientific trawl survey')
 ax2.set_ylim([0, 23])
-for years in years_list:
+for years in years_list[3:-1]:
     bio_tmp = df_bio_ave[(df_bio_ave.index>=years[0]) & (df_bio_ave.index<=years[1])]
     if len(bio_tmp)>0:
         pp = np.polyfit(bio_tmp.index, bio_tmp.values, 1)
         yyyy = np.arange(years[0], years[1]+1)
         ax2.plot(yyyy, yyyy*pp[0] + pp[1], linestyle='--', color='red', linewidth=2)
+ax.set_xlim([1975, 2020])
 # Save fig
 fig.set_size_inches(w=8, h=6)
 fig_name = 'trawl_ruptures.png'
@@ -205,12 +214,13 @@ ax2.legend(['Capelin'])
 plt.ylabel(r'Biomass ($\rm kt$)', color='tab:blue')
 plt.title('Capelin Spring Acoustic Survey')
 ax2.set_ylim([0, 6000])
-for years in years_list:
+for years in years_list[:-1]:
     cap_tmp = df_cap2_spring[(df_cap2_spring.index>=years[0]) & (df_cap2_spring.index<=years[1])]
     if len(cap_tmp)>0:
         pp = np.polyfit(cap_tmp.index, cap_tmp.values, 1)
         yyyy = np.arange(years[0], years[1]+1)
         ax2.plot(yyyy, yyyy*pp[0] + pp[1], linestyle='--', color='tab:blue', linewidth=2)
+ax.set_xlim([1975, 2020])
 # Save fig
 fig.set_size_inches(w=8, h=6)
 fig_name = 'capelin_ruptures.png'
@@ -233,15 +243,50 @@ ax2.legend(['Groundfish'])
 plt.ylabel(r'Excess biomass ($\rm kt$)', color='tab:orange')
 plt.title('Groundfish surplus production model')
 #ax2.set_ylim([0, 6000])
-for years in years_list:
+for years in years_list[:-1]:
     gf_tmp = df_ncam[(df_ncam.index>=years[0]) & (df_ncam.index<=years[1])]
     if len(gf_tmp)>0:
         pp = np.polyfit(gf_tmp.index, gf_tmp.values, 1)
         yyyy = np.arange(years[0], years[1]+1)
         ax2.plot(yyyy, yyyy*pp[0] + pp[1], linestyle='--', color='tab:orange', linewidth=2)
+ax.set_xlim([1975, 2020])
 # Save fig
 fig.set_size_inches(w=8, h=6)
 fig_name = 'groundfish_ruptures.png'
+fig.savefig(fig_name, dpi=150)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)
+
+## Nutrients
+df_monthly = pd.read_pickle('/home/cyrf0006/AZMP/btl_data/monthly_nutrients.pkl') #see cs_extract_SInutrients.py
+#df_nut = df[['Nitrate', 'Silicate', 'Phosphate']].mean(axis=1)
+df_nuts = df_monthly[['Nitrate', 'Silicate']].resample('As').mean()
+df_nuts.index = df_nuts.index.year
+df_nut = df_nuts.mean(axis=1)
+
+plt.clf()
+fig, ax = plt.subplots(nrows=1, ncols=1)
+nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
+plt.grid('on')
+plt.ylabel('NLCI (cumsum)', color='magenta')
+for years in years_list:
+    plt.plot([years[0], years[0]], [-2, 10], '--k')
+ax.set_ylim([-2, 10])
+ax2 = ax.twinx()
+df_nuts.Nitrate.dropna().plot(ax=ax2, marker='.', linestyle=' ', alpha=.6)    
+df_nuts.Silicate.dropna().plot(ax=ax2, marker='.', linestyle=' ', alpha=.6)
+df_nuts.Nitrate.dropna().rolling(5, center=True).mean().plot(ax=ax2, color='steelblue', linewidth=3, alpha=.6)
+df_nuts.Silicate.dropna().rolling(5, center=True).mean().plot(ax=ax2, color='tab:orange', linewidth=3, alpha=.6) 
+ax2.legend(['NO3', 'SiO', 'NO3 5yr', 'SiO 5yr'])
+plt.ylabel(r'Concentration ($mmol\,m^{-3}$)')
+plt.title('Nutrients - Southern Labrador Shelf (50-150m)')
+## for years in years_list:
+##     nut_tmp = df_nut[(df_nut.index>=years[0]) & (df_nut.index<=years[1])]
+##     if len(nut_tmp)>0:
+##         ax2.plot([years[0], years[1]], [nut_tmp.mean(), nut_tmp.mean()], linestyle='--', color='tab:brown', linewidth=2)
+ax.set_xlim([1995, 2020])
+# Save fig
+fig.set_size_inches(w=8, h=6)
+fig_name = 'nutrients_ruptures.png'
 fig.savefig(fig_name, dpi=150)
 os.system('convert -trim ' + fig_name + ' ' + fig_name)
 

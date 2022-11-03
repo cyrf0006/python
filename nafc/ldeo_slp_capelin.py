@@ -184,6 +184,9 @@ df_PP.set_index('time', inplace=True)
 # Load Calanus
 df_cal = pd.read_csv('/home/cyrf0006/research/PeopleStuff/BelangerStuff/CorrelationData.csv', index_col='Year')
 df_cal = df_cal['calfin']
+# Abundance
+df_cal_ab = pd.read_csv('/home/cyrf0006/research/PeopleStuff/BelangerStuff/CALFIN_abundance.csv', index_col='Year')
+df_cal_ab = df_cal_ab['Mean abundance (log10 ind. m-2)']
 
 ####  ---- Loop on years --- ####
 for years in years_list:
@@ -254,19 +257,29 @@ for years in years_list:
         pp2 = np.polyfit(df_tmp2.index, df_tmp2.values, 1)
         trend2 = pp2[0]    
         if trend2>0:
-            plt.annotate('+' + "{:.1f}".format(np.abs(trend2)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, .08), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('+' + "{:.1f}".format(np.abs(trend2)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, 0), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
         elif trend2<0:
-            plt.annotate('-' + "{:.1f}".format(np.abs(trend2)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, .08), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('-' + "{:.1f}".format(np.abs(trend2)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, 0), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
         
-    # Trends Crab (Mullowney)
-    ## df_tmp3 = df_crab[(df_crab.index>=years[0]) & (df_crab.index<years[1])].dropna()
-    ## if len(df_tmp3)>0:
-    ##     pp = np.polyfit(df_tmp3.index, df_tmp3.values, 1)
-    ##     trend3 = pp[0]
-    ##     if trend3>0:
-    ##         plt.annotate('+' + "{:.1f}".format(np.abs(trend3)), xy=(.97, .76), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right')
-    ##     elif trend3<0:
-    ##         plt.annotate('-' + "{:.1f}".format(np.abs(trend3)), xy=(.97, .76), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right')
+   # Trends biomass density (Mariano)
+    df_tmp4 = df_bio_ave[(df_bio_ave.index>=years[0]) & (df_bio_ave.index<years[1])].dropna()
+    if len(df_tmp4)>2:
+        pp = np.polyfit(df_tmp4.index, df_tmp4.values, 1)
+        trend = pp[0]
+        if trend>0:
+            plt.annotate('+' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1, .08), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+        elif trend<0:
+            plt.annotate('-' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1,.08), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+
+   ##  # Trends Crab (Mullowney)
+   ##  ## df_tmp3 = df_crab[(df_crab.index>=years[0]) & (df_crab.index<years[1])].dropna()
+   ##  ## if len(df_tmp3)>0:
+   ##  ##     pp = np.polyfit(df_tmp3.index, df_tmp3.values, 1)
+   ##  ##     trend3 = pp[0]
+   ##  ##     if trend3>0:
+   ##  ##         plt.annotate('+' + "{:.1f}".format(np.abs(trend3)), xy=(.97, .76), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right')
+   ##  ##     elif trend3<0:
+   ##  ##         plt.annotate('-' + "{:.1f}".format(np.abs(trend3)), xy=(.97, .76), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right')
 
     # Trends Capelin (DFO spring survey)
     df_tmp = df_cap2_spring[(df_cap2_spring.index>=years[0]) & (df_cap2_spring.index<years[1])].dropna()
@@ -277,26 +290,16 @@ for years in years_list:
             plt.annotate('+' + "{:.1f}".format(np.abs(trend)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, .16), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
         elif trend<0:
             plt.annotate('-' + "{:.1f}".format(np.abs(trend)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, .16), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
-        
-    # Trends biomass density (Mariano)
-    df_tmp4 = df_bio_ave[(df_bio_ave.index>=years[0]) & (df_bio_ave.index<years[1])].dropna()
-    if len(df_tmp4)>0:
-        pp = np.polyfit(df_tmp4.index, df_tmp4.values, 1)
-        trend = pp[0]
-        if trend>0:
-            plt.annotate('+' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1, 0), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
-        elif trend<0:
-            plt.annotate('-' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1,0), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
 
-    ## # Trends Calfin (proxy)
-    ## df_tmp5 = df_cal[(df_cal.index>=years[0]) & (df_cal.index<years[1])].dropna()
-    ## if len(df_tmp5)>0:
-    ##     pp = np.polyfit(df_tmp5.index, df_tmp5.values, 1)
-    ##     trend = pp[0]*100
-    ##     if trend>0:
-    ##         plt.annotate('+' + "{:.1f}".format(np.abs(trend.squeeze())), xy=(1, .24), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
-    ##     elif trend<0:
-    ##         plt.annotate('-' + "{:.1f}".format(np.abs(trend.squeeze())), xy=(1, .24), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+   ##  ## # Trends Calfin (proxy)
+   ##  ## df_tmp5 = df_cal[(df_cal.index>=years[0]) & (df_cal.index<years[1])].dropna()
+   ##  ## if len(df_tmp5)>0:
+   ##  ##     pp = np.polyfit(df_tmp5.index, df_tmp5.values, 1)
+   ##  ##     trend = pp[0]*100
+   ##  ##     if trend>0:
+   ##  ##         plt.annotate('+' + "{:.1f}".format(np.abs(trend.squeeze())), xy=(1, .24), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+   ##  ##     elif trend<0:
+   ##  ##         plt.annotate('-' + "{:.1f}".format(np.abs(trend.squeeze())), xy=(1, .24), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
 
     # Trends PP (cmems)
     df_tmp6 = df_PP[(df_PP.index>=years[0]) & (df_PP.index<years[1])].dropna()
@@ -307,14 +310,14 @@ for years in years_list:
         elif anom<0:
             plt.annotate('-' + "{:.2f}".format(np.abs(anom[0])) + r'$\rm \,mgC\,m^{-3}\,d^{-1}$', xy=(1,.84), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
 
-    # Trends calfin
-    df_tmp7 = df_cal[(df_cal.index>=years[0]) & (df_cal.index<years[1])].dropna()
+    # Trends calfin (azmp)
+    df_tmp7 = df_cal_ab[(df_cal_ab.index>=years[0]) & (df_cal_ab.index<years[1])].dropna()
     if len(df_tmp7)>0:
-        anom = (df_tmp7.mean() - df_cal.mean())  #mg m-3 day-1
+        anom = (df_tmp7.mean() - df_cal_ab.mean())  #mg m-3 day-1
         if anom>0:
-            plt.annotate('+' + "{:.2f}".format(np.abs(anom)) + ' sd', xy=(1,.76), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('+' + "{:.2f}".format(np.abs(anom)) + r'$\rm\,log_{10}(ind\,m^{-2})$', xy=(1,.76), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
         elif anom<0:
-            plt.annotate('-' + "{:.2f}".format(np.abs(anom)) + ' sd', xy=(1,.76), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('-' + "{:.2f}".format(np.abs(anom)) + r'$\rm\,log_{10}(ind\,m^{-2})$', xy=(1,.76), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
                                     
     #### ---- Save Figure ---- ####
     #plt.suptitle('Fall surveys', fontsize=16)
@@ -324,12 +327,8 @@ for years in years_list:
     os.system('convert -trim ' + fig_name + ' ' + fig_name)
     plt.close()
 
-## plt.close('all')
-#os.system('montage anom_SLP_1948-1971.png anom_SLP_1971-1982.png anom_SLP_1982-1995.png anom_SLP_1995-2013.png anom_SLP_2013-2017.png anom_SLP_2017-2021.png -tile 2x3 -geometry +10+10  -background white  SLP_anom_capelin.png')
+plt.close('all')
 
-#os.system('montage anom_SLP_1948-1971.png  anom_SLP_1971-1976.png anom_SLP_1976-1982.png anom_SLP_1982-1995.png anom_SLP_1995-2013.png anom_SLP_2013-2017.png anom_SLP_2017-2021.png -tile 2x4 -geometry +10+10  -background white  SLP_anom_capelin2.png')
+os.system('montage anom_SLP_1948-1971.png anom_SLP_1971-1976.png anom_SLP_1976-1982.png anom_SLP_1982-1998.png anom_SLP_1998-2014.png anom_SLP_2014-2017.png -tile 2x3 -geometry +10+10  -background white  SLP_anom_capelin.png')
 
-os.system('montage anom_SLP_1948-1971.png anom_SLP_1971-1976.png anom_SLP_1976-1982.png anom_SLP_1982-1998.png anom_SLP_1998-2014.png anom_SLP_2014-2017.png -tile 2x3 -geometry +10+10  -background white  SLP_anom_capelin3.png')
-
-## os.system('montage anom_SLP_1975-1982.png anom_SLP_1982-1990.png anom_SLP_1990-1995.png anom_SLP_1995-2012.png anom_SLP_2012-2017.png anom_SLP_2017-2021.png -tile 2x3 -geometry +10+10  -background white  SLP_anom_capelin_biomass.png')
 
