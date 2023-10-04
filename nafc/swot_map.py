@@ -239,10 +239,12 @@ M1 = m(-(53), 50+45/60)
 #M2 = m(-(53.5), 50)
 M2 = m(-(53.25), 50+10/60)
 M3 = m(-(52 + 35/60), 49+45/60)
+MG = m(-51.65, 49.65)
 
 m.scatter(M1[0],M1[1], 60, marker='*',color='m', zorder=10)
 m.scatter(M2[0],M2[1], 60, marker='*',color='m', zorder=10)
 m.scatter(M3[0],M3[1], 60, marker='*',color='m', zorder=10)
+m.scatter(MG[0],MG[1], 60, marker='*',color='r', zorder=10)
 
 #x_glider, y_glider = m([glid1[0], glid2[0]], [glid1[1], glid2[1]])
 #x_uctd, y_uctd = m([uctd1[0], uctd2[0], uctd3[0]], [uctd1[1], uctd2[1], uctd3[1]])

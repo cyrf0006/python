@@ -31,7 +31,7 @@ plt.rc('font', **font)
 
 ## ---- Some custom parameters ---- ##
 #year_clim = [1981, 2010]
-year_clim = [1991, 2020]
+year_clim = [1998, 2020]
 current_year = 2020
 XLIM = [datetime.date(1945, 1, 1), datetime.date(2020, 12, 31)]
 french_months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
@@ -61,8 +61,15 @@ doy_index[-1] = doy_index[-1]+365
 weekly_climT.index = doy_index
 weekly_climS.index = doy_index
 # Calculate density
+# new depth matrix:
+depths = pd.DataFrame(zip(*[weekly_climT.columns.values]*len(weekly_climT.index)))
+depths = depths.T
+depths.index = weekly_climT.index
+# Calculate density
 SA = gsw.SA_from_SP(weekly_climS, weekly_climS.columns, -52, 47)
-CT = gsw.CT_from_t(SA, weekly_climT, weekly_climT.columns)
+CT = gsw.CT_from_t(SA.T, weekly_climT.T, depths.T).T
+#SA = gsw.SA_from_SP(weekly_climS, weekly_climS.columns, -52, 47)
+#CT = gsw.CT_from_t(SA, weekly_climT, weekly_climT.columns)
 SIG = gsw.sigma0(SA, CT)
 weekly_climSIG = pd.DataFrame(SIG, index=weekly_climT.index, columns=weekly_climT.columns)
 
@@ -70,11 +77,15 @@ weekly_climSIG = pd.DataFrame(SIG, index=weekly_climT.index, columns=weekly_clim
 fig, ax = plt.subplots(nrows=1, ncols=1)
 weekly_climT.iloc[:,4:10].mean(axis=1).plot(ax=ax, color='indianred')
 weekly_climT.iloc[:,149:-1].mean(axis=1).plot(ax=ax, color='indianred', linestyle='--')
-YLABT = ax.set_ylabel(r'$\rm T(^{\circ}C)$', fontsize=16, fontweight='normal')
+YLABT = ax.set_ylabel(r'$\rm T(^{\circ}C)$', fontsize=16, fontweight='normal', color='red')
+ax.tick_params(axis='y', which='both', colors='red')
+ax.yaxis.label.set_color('red')
 ax2 = ax.twinx()
 weekly_climS.iloc[:,4:10].mean(axis=1).plot(ax=ax2, color='steelblue')
 weekly_climS.iloc[:,149:-1].mean(axis=1).plot(ax=ax2, color='steelblue', linestyle='--')
-YLABS = ax2.set_ylabel(r'S', fontsize=14, fontweight='normal')
+YLABS = ax2.set_ylabel(r'S', fontsize=14, fontweight='normal', color='steelblue')
+ax2.tick_params(axis='y', which='both', colors='steelblue')
+ax2.yaxis.label.set_color('steelblue')
 ax2.set_xlabel(r'DOY', fontsize=14, fontweight='normal')
 # Load bloom timing
 bloomt = pd.read_csv('MeanTimingMax.csv')
@@ -89,8 +100,9 @@ max_low = max - timedelta(days=doy['sdMax'])
 max_high = max + timedelta(doy['sdMax'])
 ax.fill_between([max_low.dayofyear, max_high.dayofyear], [-2, -2], [15, 15], facecolor='red', interpolate=True , alpha=.3)
 ax.set_ylim([-2, 15])
+ax.set_xlim([0, 365])
 ax.legend([r'$\rm T_{5-10m}$', r'$\rm T_{150-bottom}$'])
-ax2.legend([r'$\rm S_{5-10m}$', r'$\rm S_{150-bottom}$'])
+ax2.legend([r'$\rm S_{5-10m}$', r'$\rm S_{150-bottom}$'], loc='lower right')
 ax2.text(10, 33.1, '  c', fontsize=20, fontweight='bold', horizontalalignment='left')
 
 YLABS.set_position([636, .5])
@@ -98,7 +110,7 @@ YLABT.set_position([50, .5])
 
 
 # Save Figure
-fig.set_size_inches(w=8, h=6)
+fig.set_size_inches(w=9.5, h=6)
 outfile_clim = 's27_T-S_clim.png'
 fig.savefig(outfile_clim, dpi=200)
 os.system('convert -trim ' + outfile_clim + ' ' + outfile_clim)

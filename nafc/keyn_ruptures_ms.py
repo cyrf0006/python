@@ -6,7 +6,7 @@ Frederic.Cyr@dfo-mpo.gc.ca
 '''
 
 import matplotlib.pyplot as plt
-import ruptures as rpt
+#import ruptures as rpt
 import pandas as pd
 import numpy as np
 import os
@@ -28,6 +28,11 @@ df_cap2_spring = df_cap2_spring['biomass ktonnes'].sort_index()
 df_cap2_spring = df_cap2_spring.groupby(['year']).mean()
 df_cap2_spring = df_cap2_spring.interpolate().dropna()
 
+## Load new Capelin index (2023)
+df_cap3 = pd.read_csv('/home/cyrf0006/data/capelin/abundance_and_biomass_by_year.csv', index_col='year')
+df_cap3 = df_cap3['med.bm.fran.kt']
+#df_cap3.drop(1982, inplace=True)
+#df_cap3 = df_cap3.interpolate().dropna()
 
 ## Load cod biomass data (Schijns et al. 2021)
 df_cod = pd.read_csv('fig_S11D_data.csv', index_col='year')
@@ -47,10 +52,25 @@ df_crab = df_crab[df_crab.age<4]
 # average all years
 df_crab = df_crab.groupby('year').mean()['Cmnpt']
 
+df_crablobster = pd.read_csv('Crab_lobster_biomass.csv')
+df_crablobster.set_index('Year', inplace=True)
+df_crab2 = df_crablobster['crabexpbio']
+df_lobster = df_crablobster['lobsterlandings']
+df_crab2.dropna(inplace=True)
+df_lobster.dropna(inplace=True)
+
 # Load Mariano's biomass density (t/km2)
 df_bio = pd.read_excel(open('RV_biomass_density.xlsx', 'rb'), sheet_name='data_only')
 df_bio.set_index('Year', inplace=True)
 df_bio_ave = df_bio['Average-ish biomass density'].dropna()
+
+# Load Mariano's Total Catches (tonnes)
+df_catch = pd.read_excel(open('NL_Catch_Data.xlsx', 'rb'), sheet_name='data_only')
+df_catch.set_index('Year', inplace=True)
+#df_catch_ave = df_catch['Total Result'].dropna()
+#df_catch_ave = df_catch[['Piscivore', 'Planktivore']].mean(axis=1).dropna()
+df_catch_ave = df_catch[['Piscivore']].mean(axis=1).dropna()
+df_catch_ave = df_catch_ave/1000 #(kt)
 
 ## df_crab = df_crab[df_crab.Region=='NL']
 ## df_crab.set_index('Year', inplace=True)
@@ -89,13 +109,14 @@ years_list = [
 [2017, 2021]
 ]
 
-    
+nlci.rolling(2).mean().cumsum().to_csv('NLCI_cumsum.csv')  
 ax = nlci.rolling(2).mean().cumsum().plot()
 Redline.plot(color='red', ax=ax)
 df_crab.rolling(5).mean().plot(color='orange', ax=ax)
 df_bio_ave.plot(color='green', ax=ax)
 ax2 = ax.twinx()
-df_cap2_spring.interpolate().plot(ax=ax2, color='blue')
+#df_cap2_spring.interpolate().plot(ax=ax2, color='blue')
+df_cap3.interpolate().plot(ax=ax2, color='blue')
 ax3 = ax2.twinx()
 df_PP.plot(ax=ax3, color='magenta')
 plt.legend(['DFO Spring survey'], loc='upper left')
@@ -117,11 +138,12 @@ plt.grid()
 plt.clf()
 fig, ax = plt.subplots(nrows=1, ncols=1)
 nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
+plt.legend(loc='upper center')
 plt.grid('on')
 plt.ylabel('NLCI (cumsum)', color='magenta')
 for years in years_list:
-    plt.plot([years[0], years[0]], [-2, 10], '--k')
-ax.set_ylim([-2, 10])
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
 ax2 = ax.twinx()
 df_PP.plot(ax=ax2, color='Green', linewidth=3, alpha=.6)
 ax2.legend(['Net Primary Production'])
@@ -148,11 +170,12 @@ df_cal_ab = df_cal_ab['Mean abundance (log10 ind. m-2)']
 
 fig, ax = plt.subplots(nrows=1, ncols=1)
 nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
+plt.legend(loc='upper center')
 plt.grid('on')
 plt.ylabel('NLCI (cumsum)', color='magenta')
 for years in years_list:
-    plt.plot([years[0], years[0]], [-2, 10], '--k')
-ax.set_ylim([-2, 10])
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
 ax2 = ax.twinx()
 df_cal_ab.plot(ax=ax2, color='tab:brown', linewidth=3, alpha=.6)
 ax2.legend(['Calfin'])
@@ -178,8 +201,8 @@ nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magent
 plt.grid('on')
 plt.ylabel('NLCI (cumsum)', color='magenta')
 for years in years_list:
-    plt.plot([years[0], years[0]], [-2, 10], '--k')
-ax.set_ylim([-2, 10])
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
 ax2 = ax.twinx()
 df_bio_ave.plot(ax=ax2, color='red', linewidth=3, alpha=.6)
 ax2.legend(['multispecies'])
@@ -199,17 +222,49 @@ fig_name = 'trawl_ruptures.png'
 fig.savefig(fig_name, dpi=150)
 os.system('convert -trim ' + fig_name + ' ' + fig_name)
 
-## Capelin
+## Total catches
 plt.clf()
 fig, ax = plt.subplots(nrows=1, ncols=1)
 nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
 plt.grid('on')
 plt.ylabel('NLCI (cumsum)', color='magenta')
 for years in years_list:
-    plt.plot([years[0], years[0]], [-2, 10], '--k')
-ax.set_ylim([-2, 10])
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
 ax2 = ax.twinx()
-df_cap2_spring.plot(ax=ax2, color='tab:blue', linewidth=3, alpha=.6)
+df_catch_ave.plot(ax=ax2, color='indianred', linewidth=3, alpha=.6)
+ax2.legend(['Statlan21'])
+plt.ylabel(r'Catches ($\rm kt$)', color='indianred')
+plt.title('NAFO Statlan21 Catches (NL)')
+#ax2.set_ylim([0, 23])
+for years in years_list[0:-1]:
+    catch_tmp = df_catch_ave[(df_catch_ave.index>=years[0]) & (df_catch_ave.index<=years[1])]
+    if len(catch_tmp)>0:
+        pp = np.polyfit(catch_tmp.index, catch_tmp.values, 1)
+        yyyy = np.arange(years[0], years[1]+1)
+        ax2.plot(yyyy, yyyy*pp[0] + pp[1], linestyle='--', color='indianred', linewidth=2)
+ax.set_xlim([1960, 2022])
+# Save fig
+fig.set_size_inches(w=8, h=6)
+fig_name = 'catch_ruptures.png'
+fig.savefig(fig_name, dpi=150)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)
+
+
+## Capelin
+plt.clf()
+fig, ax = plt.subplots(nrows=1, ncols=1)
+nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
+plt.legend(loc='upper center')
+plt.grid('on')
+plt.ylabel('NLCI (cumsum)', color='magenta')
+for years in years_list:
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
+ax2 = ax.twinx()
+#df_cap2_spring.plot(ax=ax2, color='tab:blue', linewidth=3, alpha=.6)
+#df_cap3.interpolate().plot(ax=ax2, color='tab:blue', linewidth=3, marker='.', alpha=.6)
+df_cap3.interpolate().plot(ax=ax2, color='tab:blue', linewidth=3, alpha=.6)
 ax2.legend(['Capelin'])
 plt.ylabel(r'Biomass ($\rm kt$)', color='tab:blue')
 plt.title('Capelin Spring Acoustic Survey')
@@ -232,11 +287,12 @@ os.system('convert -trim ' + fig_name + ' ' + fig_name)
 plt.clf()
 fig, ax = plt.subplots(nrows=1, ncols=1)
 nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
+plt.legend(loc='upper center')
 plt.grid('on')
 plt.ylabel('NLCI (cumsum)', color='magenta')
 for years in years_list:
-    plt.plot([years[0], years[0]], [-2, 10], '--k')
-ax.set_ylim([-2, 10])
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
 ax2 = ax.twinx()
 df_ncam.plot(ax=ax2, color='tab:orange', linewidth=3, alpha=.6)
 ax2.legend(['Groundfish'])
@@ -266,11 +322,12 @@ df_nut = df_nuts.mean(axis=1)
 plt.clf()
 fig, ax = plt.subplots(nrows=1, ncols=1)
 nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
+plt.legend(loc='upper center')
 plt.grid('on')
 plt.ylabel('NLCI (cumsum)', color='magenta')
 for years in years_list:
-    plt.plot([years[0], years[0]], [-2, 10], '--k')
-ax.set_ylim([-2, 10])
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
 ax2 = ax.twinx()
 df_nuts.Nitrate.dropna().plot(ax=ax2, marker='.', linestyle=' ', alpha=.6)    
 df_nuts.Silicate.dropna().plot(ax=ax2, marker='.', linestyle=' ', alpha=.6)
@@ -291,3 +348,61 @@ fig.savefig(fig_name, dpi=150)
 os.system('convert -trim ' + fig_name + ' ' + fig_name)
 
 
+## Crab
+plt.clf()
+fig, ax = plt.subplots(nrows=1, ncols=1)
+nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
+plt.legend(loc='upper center')
+plt.grid('on')
+plt.ylabel('NLCI (cumsum)', color='magenta')
+for years in years_list:
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
+ax2 = ax.twinx()
+df_crab2.plot(ax=ax2, color='tab:orange', linewidth=3, alpha=.6)
+ax2.legend(['Snow Crab'])
+plt.ylabel(r'Biomass ($\rm kt$)', color='tab:orange')
+plt.title('Snow Crab Exploitable biomass')
+#ax2.set_ylim([0, 6000])
+for years in years_list[:-1]:
+    gf_tmp = df_crab2[(df_crab2.index>=years[0]) & (df_crab2.index<=years[1])]
+    if len(gf_tmp)>0:
+        pp = np.polyfit(gf_tmp.index, gf_tmp.values, 1)
+        yyyy = np.arange(years[0], years[1]+1)
+        ax2.plot(yyyy, yyyy*pp[0] + pp[1], linestyle='--', color='tab:orange', linewidth=2)
+ax.set_xlim([1975, 2020])
+# Save fig
+fig.set_size_inches(w=8, h=6)
+fig_name = 'snowcrab_ruptures.png'
+fig.savefig(fig_name, dpi=150)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)
+
+
+## Lobster
+plt.clf()
+fig, ax = plt.subplots(nrows=1, ncols=1)
+nlci.rolling(2).mean().cumsum().plot(ax=ax, linewidth=3, alpha=.6, color='magenta')
+plt.legend(loc='upper center')
+plt.grid('on')
+plt.ylabel('NLCI (cumsum)', color='magenta')
+for years in years_list:
+    plt.plot([years[0], years[0]], [-1, 12], '--k')
+ax.set_ylim([-1, 12])
+ax2 = ax.twinx()
+df_lobster.plot(ax=ax2, color='tab:red', linewidth=3, alpha=.6)
+ax2.legend(['Lobster'])
+plt.ylabel(r'Landings ($\rm kt$)', color='tab:red')
+plt.title('Lobster Landings')
+#ax2.set_ylim([0, 6000])
+for years in years_list[:-1]:
+    gf_tmp = df_lobster[(df_lobster.index>=years[0]) & (df_lobster.index<=years[1])]
+    if len(gf_tmp)>0:
+        pp = np.polyfit(gf_tmp.index, gf_tmp.values, 1)
+        yyyy = np.arange(years[0], years[1]+1)
+        ax2.plot(yyyy, yyyy*pp[0] + pp[1], linestyle='--', color='tab:red', linewidth=2)
+ax.set_xlim([1975, 2020])
+# Save fig
+fig.set_size_inches(w=8, h=6)
+fig_name = 'lobster_ruptures.png'
+fig.savefig(fig_name, dpi=150)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)

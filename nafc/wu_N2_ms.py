@@ -24,7 +24,7 @@ import pylab as plb
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy import asarray as ar,exp
-from lmfit.models import LorentzianModel
+#from lmfit.models import LorentzianModel
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 from scipy import optimize
@@ -40,7 +40,7 @@ zmax = .03
 REGION = '3LNO'
 #depth_range = '5-50m'
 #depth_range = '5-20m'
-depth_range = '5-100m'
+#depth_range = '5-100m'
 #depth_range = '5-100m'
 #depth_range = '0-50m'
 depth_range = '5-150m'
@@ -51,7 +51,7 @@ YLIM_log1 = [6e-5, 3.2e-4]
 
 use_N2 = False #(otherwise use strat from density difference)
 weekly_average= True
-add_MLD = True
+add_MLD = False
 add_TS = True
 
 if use_N2:
@@ -100,10 +100,10 @@ if weekly_average:
 
 # Stratification clim
 df_doy = df_strat.copy()
-df_doy = df_doy[(df_doy.index.year>=1991) & (df_doy.index.year<=2020)]
+df_doy = df_doy[(df_doy.index.year>=1998) & (df_doy.index.year<=2020)]
 df_doy.index = df_doy.index.dayofyear
 df_doy = df_doy.groupby('time').mean()
-df_doy = df_doy.interpolate()
+#df_doy = df_doy.interpolate()
 
 # load Stn 27 temp
 if add_TS:
@@ -114,8 +114,8 @@ if add_TS:
         CT = CT.resample('W').mean()
         SA = SA.resample('W').mean()
     # Calculate T-S stratificaiton
-    alpha = gsw.alpha(SA,CT,SA.columns)
-    beta = gsw.beta(SA,CT,SA.columns)
+    alpha = gsw.alpha(SA.values,CT.values,SA.columns)
+    beta = gsw.beta(SA.values,CT.values,SA.columns)
     if depth_range == '5-10m':
         alpha = alpha[:,4:10].mean(axis=1)
         beta = beta[:,4:10].mean(axis=1)
@@ -140,8 +140,8 @@ if add_TS:
 # Calculate N_T, N_S
 Ts_doy = strat_T.copy()
 Ss_doy = strat_S.copy()
-Ts_doy = Ts_doy[(Ts_doy.index.year>=1991) & (Ts_doy.index.year<=2020)]
-Ss_doy = Ss_doy[(Ss_doy.index.year>=1991) & (Ss_doy.index.year<=2020)]
+Ts_doy = Ts_doy[(Ts_doy.index.year>=1998) & (Ts_doy.index.year<=2020)]
+Ss_doy = Ss_doy[(Ss_doy.index.year>=1998) & (Ss_doy.index.year<=2020)]
 # Interpolate T
 Ts_doy.index = Ts_doy.index.dayofyear
 Ts_doy = Ts_doy.groupby('time').mean()
@@ -182,9 +182,11 @@ fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1)
 ## ax0
 # Stratification
 df_doy.plot(linestyle=' ', marker='.', ax=ax0)    
-df_doy.rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='orange', ax=ax0)
+df_doy.interpolate().rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='orange', ax=ax0, zorder=100)
 #ax0.set_ylabel(r'$\rm d \sigma_0 / dz (kg m^{-4})$', color='orange')
 ax0.set_ylabel(r'$\rm log_{10}(\tilde{N}^2 ~/~ s^{-2})$', color='orange')
+ax0.yaxis.label.set_color('orange')
+ax0.tick_params(axis='y', which='both', colors='orange')
 ax0.set_xlabel('DOY')
 # Bloom timing
 ax0.fill_between([init_low.dayofyear, init_high.dayofyear], [YLIM_log1[0], YLIM_log1[0]], [YLIM_log1[1], YLIM_log1[1]], facecolor='green', interpolate=True , alpha=.3)
@@ -192,26 +194,29 @@ max = pd.to_datetime(1900 * 1000 + doy.meanMax, format='%Y%j')
 max_low = max - timedelta(days=doy['sdMax'])
 max_high = max + timedelta(doy['sdMax'])
 ax0.set_ylim(YLIM_log1)
+ax0.set_xlim([0, 365])
 ax0.fill_between([max_low.dayofyear, max_high.dayofyear], [YLIM_log1[0], YLIM_log1[0]], [YLIM_log1[1], YLIM_log1[1]], facecolor='red', interpolate=True , alpha=.3)
 ax0.grid()
 ax0.set_yscale('log')
-ax0.text(0, 3.4e-4, 'a', fontsize=14, fontweight='bold')
+ax0.text(-10, 3.4e-4, 'a)', fontsize=11, fontweight='bold')
 # MLD
 mld_doy = df_MLD.copy()
-mld_doy = mld_doy[(mld_doy.index.year>=1991) & (mld_doy.index.year<=2020)]
+mld_doy = mld_doy[(mld_doy.index.year>=1998) & (mld_doy.index.year<=2020)]
 mld_doy.index = mld_doy.index.dayofyear
 mld_doy = mld_doy.groupby('time').mean()
-mld_doy = mld_doy.interpolate()
 ax01 = ax0.twinx()
-mld_doy.plot(ax=ax01, linestyle=' ', marker='.', color='cyan')    
-mld_doy.rolling(30, center=True).mean().plot(ax=ax01, linestyle='-', linewidth=3, color='darkgray')
-ax01.set_ylabel('MLD (m)', color='darkgray')
+mld_doy.plot(ax=ax01, linestyle=' ', marker='.', color='darkgray')    
+mld_doy.interpolate().rolling(30, center=True).mean().plot(ax=ax01, linestyle='-', linewidth=3, color='black', zorder=100)
+ax01.set_ylabel('MLD (m)', color='black')
 ax01.invert_yaxis()
+ax01.yaxis.label.set_color('black')
+ax01.tick_params(axis='y', colors='black')
 
 ## ax1
-df_doy.rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='orange', ax=ax1)
+df_doy.interpolate().rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='orange', ax=ax1)
 Ts_doy.rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='red', ax=ax1)
 Ss_doy.rolling(30, center=True).mean().plot(linestyle='-', linewidth=3, color='blue', ax=ax1)
+ax1.legend([r'$\rm \tilde{N}^2$', r'$\rm \tilde{N}^2_T$', r'$\rm \tilde{N}^2_S$'])
 ax1.fill_between([init_low.dayofyear, init_high.dayofyear], [YLIM_log[0], YLIM_log[0]], [YLIM_log[1], YLIM_log[1]], facecolor='green', interpolate=True , alpha=.3)
 ax1.fill_between([max_low.dayofyear, max_high.dayofyear], [YLIM_log[0], YLIM_log[0]], [YLIM_log[1], YLIM_log[1]], facecolor='red', interpolate=True , alpha=.3)
 ax1.set_ylabel(r'$\rm log_{10}(\tilde{N}^2,\tilde{N}^2_T, \tilde{N}^2_S  ~/~ s^{-2})$')
@@ -219,8 +224,9 @@ ax1.set_ylabel(r'$\rm log_{10}(\tilde{N}^2,\tilde{N}^2_T, \tilde{N}^2_S  ~/~ s^{
 ax1.set_xlabel('DOY')
 ax1.set_yscale('log')
 ax1.set_ylim(YLIM_log)
+ax1.set_xlim([0, 365])
 ax1.grid()
-ax1.text(0, 5.8e-4, 'b', fontsize=14, fontweight='bold')
+ax1.text(-10, 5.8e-4, 'b)', fontsize=11, fontweight='bold')
 
 # Tweak dates
 ## pd.to_datetime(a[1:-1], format='%j')        

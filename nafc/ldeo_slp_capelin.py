@@ -77,17 +77,15 @@ ds = xr.open_dataset('/home/cyrf0006/data/NOAA_ESRL/slp.mon.mean.nc')
 da = ds['slp']
 #p = da.to_pandas() # deprecated
 p = da.to_dataframe() # deprecated
-# Restrict to 2021
-p = p[(p.index.get_level_values('time').year<=2021)]
+# Restrict to 1950-2020
+#p = p[(p.index.get_level_values('time').year<=2020)]
+p = p[(p.index.get_level_values('time').year<=2020)]
 
-# Compute climatology
-#p_clim = p[(p.items.month>=months[0]) & (p.items.year<=months[1])]
-#df_clim = p_clim.mean(axis=0)
-#df_clim = p.mean(axis=0)
-# Compute climatology
-df_clim = p.groupby(level=[1,2]).mean().unstack()
+# Compute climatology 1950-2000
+p_clim = p[(p.index.get_level_values('time').year>=1950) & (p.index.get_level_values('time').year<=2000)]
+df_clim = p_clim.unstack().groupby(level=['lat']).mean()
 
-
+    
 # Load NCAM data
 #df_ncam = pd.read_csv('/home/cyrf0006/data/NCAM/multispic_estimates.csv', index_col='year')
 ## df_cod = df_ncam[df_ncam.species=='Cod']
@@ -168,10 +166,23 @@ df_cap2_fall = df_cap2_fall['biomass ktonnes'].sort_index()
 df_cap2_fall = df_cap2_fall.groupby(['year']).mean()
 df_cap2_fall_diff = df_cap2_fall.interpolate().rolling(5, min_periods=3, center=False).mean().diff()
 
+## Load new Capelin index (2023)
+df_cap3 = pd.read_csv('/home/cyrf0006/data/capelin/abundance_and_biomass_by_year.csv', index_col='year')
+df_cap3 = df_cap3['med.bm.fran.kt']
+#df_cap3.drop(1982, inplace=True)
+df_cap3 = df_cap3.interpolate().dropna()
+
 # Load Mariano's biomass density (t/km2)
 df_bio = pd.read_excel(open('RV_biomass_density.xlsx', 'rb'), sheet_name='data_only')
 df_bio.set_index('Year', inplace=True)
 df_bio_ave = df_bio['Average-ish biomass density'].dropna()
+
+# Load Mariano's Total Catches (tonnes)
+df_catch = pd.read_excel(open('NL_Catch_Data.xlsx', 'rb'), sheet_name='data_only')
+df_catch.set_index('Year', inplace=True)
+#df_catch_ave = df_catch['Total Result'].dropna()
+df_catch_ave = df_catch['Piscivore'].dropna()
+df_catch_ave = df_catch_ave/1000 #(kt)
 
 # Load Calfin proxy
 df_cal = pd.read_csv('calanus_nlci_proxy.csv')
@@ -222,31 +233,31 @@ for years in years_list:
     ## plt.close('all')
 
     #### ---- Anomaly ---- ####
-    anom = df - df_clim
-    fig_name = 'anom_SLP_' + np.str(years[0]) + '-' + np.str(years[1]) + '.png'
-    fig_name2 = 'anom_SLP_' + np.str(years[0]) + '-' + np.str(years[1]) + '.svg'
+    df_anom = df - df_clim
+    fig_name = 'anom_SLP_' + str(years[0]) + '-' + str(years[1]) + '.png'
+    fig_name2 = 'anom_SLP_' + str(years[0]) + '-' + str(years[1]) + '.svg'
     print(fig_name)
     plt.clf()
     fig2, ax = plt.subplots(nrows=1, ncols=1)
 
     m = Basemap(projection='ortho',lon_0=-40,lat_0=40, resolution='l', llcrnrx=-4000000, llcrnry=-2000000, urcrnrx=5000000, urcrnry=7000000)
     m.drawcoastlines()
-    m.fillcontinents(color='tan')
+    m.fillcontinents(color='tan', zorder=10)
     # draw parallels and meridians.
-    m.drawparallels(np.arange(-90.,120.,30.))
-    m.drawmeridians(np.arange(0.,420.,60.))
+    m.drawparallels(np.arange(-90.,120.,30.), zorder=10)
+    m.drawmeridians(np.arange(0.,420.,60.), zorder=10)
     #m.drawmapboundary(fill_color='aqua')
 
     #x,y = m(*np.meshgrid(df.columns.values,df.index.values))
     x,y = m(*np.meshgrid(df.columns.droplevel(None) ,df.index))
-    #c = m.contourf(x, y, anom.values, np.linspace(-2.2, 2.2, 12), cmap=plt.cm.seismic, extend='both');
-    c = m.contourf(x, y, anom.values, np.linspace(-1.8, 1.8, 10), cmap=plt.cm.seismic, extend='both');
-    ct = m.contour(x, y, df_clim.values, 10, colors='k');
+    #c = m.contourf(x, y, df_anom.values, np.linspace(-2.2, 2.2, 12), cmap=plt.cm.seismic, extend='both');
+    c = m.contourf(x, y, df_anom.values, np.linspace(-1.8, 1.8, 10), cmap=plt.cm.seismic, extend='both');
+    ct = m.contour(x, y, df_clim.values, 10, colors='k', zorder=50);
     cb = plt.colorbar(c)
     cb.set_label('SLP anomaly (mb)', fontsize=15)
     xBox, yBox = m([lon2, lon1, lon1, lon2, lon2], [lat2, lat2, lat1, lat1, lat2])
-    m.plot(xBox, yBox, '--k', linewidth=2)
-    plt.text(8400000, 12800000, np.str(years[0]) + '-' + np.str(years[1]), fontsize=18, fontweight='bold')
+    m.plot(xBox, yBox, '--k', linewidth=2, zorder=50)
+    plt.text(8400000, 12800000, str(years[0]) + '-' + str(years[1]), fontsize=18, fontweight='bold')
 
     #### ---- Add ecosystem trends ---- ####
     # Trends Cod (Regular's process error)
@@ -257,9 +268,9 @@ for years in years_list:
         pp2 = np.polyfit(df_tmp2.index, df_tmp2.values, 1)
         trend2 = pp2[0]    
         if trend2>0:
-            plt.annotate('+' + "{:.1f}".format(np.abs(trend2)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, 0), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('+' + "{:.1f}".format(np.abs(trend2)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, 0), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
         elif trend2<0:
-            plt.annotate('-' + "{:.1f}".format(np.abs(trend2)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, 0), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('-' + "{:.1f}".format(np.abs(trend2)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, 0), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
         
    # Trends biomass density (Mariano)
     df_tmp4 = df_bio_ave[(df_bio_ave.index>=years[0]) & (df_bio_ave.index<years[1])].dropna()
@@ -267,9 +278,19 @@ for years in years_list:
         pp = np.polyfit(df_tmp4.index, df_tmp4.values, 1)
         trend = pp[0]
         if trend>0:
-            plt.annotate('+' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1, .08), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('+' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1, .08), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
         elif trend<0:
-            plt.annotate('-' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1,.08), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('-' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1,.08), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
+
+#   # Trends Catches (Mariano)
+#    df_tmp0 = df_catch_ave[(df_catch_ave.index>=years[0]) & (df_catch_ave.index<years[1])].dropna()
+#    if len(df_tmp0)>2:
+#        pp = np.polyfit(df_tmp0.index, df_tmp0.values, 1)
+#        trend = pp[0]
+#        if trend>0:
+#            plt.annotate('+' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1, .24), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
+#        elif trend<0:
+#            plt.annotate('-' + "{:.2f}".format(np.abs(trend)) + r'$\rm \,t\,km^{-2}\,yr^{-1}$', xy=(1,.24), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
 
    ##  # Trends Crab (Mullowney)
    ##  ## df_tmp3 = df_crab[(df_crab.index>=years[0]) & (df_crab.index<years[1])].dropna()
@@ -283,15 +304,18 @@ for years in years_list:
 
     # Trends Capelin (DFO spring survey)
     df_tmp = df_cap2_spring[(df_cap2_spring.index>=years[0]) & (df_cap2_spring.index<years[1])].dropna()
+    # Trends Capelin (New 2022 index)
+    df_tmp = df_cap3[(df_cap3.index>=years[0]) & (df_cap3.index<years[1])].dropna()
     if len(df_tmp)>0:
         pp = np.polyfit(df_tmp.index, df_tmp.values, 1)
         trend = pp[0]
         if trend>0:
-            plt.annotate('+' + "{:.1f}".format(np.abs(trend)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, .16), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('+' + "{:.1f}".format(np.abs(trend)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, .16), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
         elif trend<0:
-            plt.annotate('-' + "{:.1f}".format(np.abs(trend)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, .16), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('-' + "{:.1f}".format(np.abs(trend)) + r'$\rm \,kt\,yr^{-1}$', xy=(1, .16), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
 
-   ##  ## # Trends Calfin (proxy)
+
+            ##  ## # Trends Calfin (proxy)
    ##  ## df_tmp5 = df_cal[(df_cal.index>=years[0]) & (df_cal.index<years[1])].dropna()
    ##  ## if len(df_tmp5)>0:
    ##  ##     pp = np.polyfit(df_tmp5.index, df_tmp5.values, 1)
@@ -306,20 +330,20 @@ for years in years_list:
     if len(df_tmp6)>0:
         anom = (df_tmp6.mean() - df_PP.mean()).values  #mg m-3 day-1
         if anom>0:
-            plt.annotate('+' + "{:.2f}".format(np.abs(anom[0])) + r'$\rm \,mgC\,m^{-3}\,d^{-1}$', xy=(1,.84), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('+' + "{:.2f}".format(np.abs(anom[0])) + r'$\rm \,mgC\,m^{-3}\,d^{-1}$', xy=(1,.84), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
         elif anom<0:
-            plt.annotate('-' + "{:.2f}".format(np.abs(anom[0])) + r'$\rm \,mgC\,m^{-3}\,d^{-1}$', xy=(1,.84), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
-
+            plt.annotate('-' + "{:.2f}".format(np.abs(anom[0])) + r'$\rm \,mgC\,m^{-3}\,d^{-1}$', xy=(1,.84), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
     # Trends calfin (azmp)
     df_tmp7 = df_cal_ab[(df_cal_ab.index>=years[0]) & (df_cal_ab.index<years[1])].dropna()
     if len(df_tmp7)>0:
         anom = (df_tmp7.mean() - df_cal_ab.mean())  #mg m-3 day-1
         if anom>0:
-            plt.annotate('+' + "{:.2f}".format(np.abs(anom)) + r'$\rm\,log_{10}(ind\,m^{-2})$', xy=(1,.76), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
+            plt.annotate('+' + "{:.2f}".format(np.abs(anom)) + r'$\rm\,log_{10}(ind\,m^{-2})$', xy=(1,.76), xycoords='axes fraction', color='g', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
         elif anom<0:
-            plt.annotate('-' + "{:.2f}".format(np.abs(anom)) + r'$\rm\,log_{10}(ind\,m^{-2})$', xy=(1,.76), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w")
-                                    
-    #### ---- Save Figure ---- ####
+            plt.annotate('-' + "{:.2f}".format(np.abs(anom)) + r'$\rm\,log_{10}(ind\,m^{-2})$', xy=(1,.76), xycoords='axes fraction', color='r', fontsize=20, fontweight='bold', horizontalalignment='right', verticalalignment='bottom', backgroundcolor="w", zorder=100)
+
+            
+
     #plt.suptitle('Fall surveys', fontsize=16)
     fig2.set_size_inches(w=8, h=6)
     fig2.savefig(fig_name, dpi=150)

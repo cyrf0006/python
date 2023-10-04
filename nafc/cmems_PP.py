@@ -5,7 +5,7 @@ import xarray as xr
 import datetime
 
 
-ds = xr.open_dataset('cmems_mod_glo_bgc_my_0.25_P1M-m_1664910381648.nc')
+ds = xr.open_dataset('/home/cyrf0006/data/CMEMS/cmems_mod_glo_bgc_my_0.25_P1M-m_1664910381648.nc')
 
 # Selection of a subset region
 ds = ds.where((ds.longitude>=-65) & (ds.longitude<=-47), drop=True) # original one

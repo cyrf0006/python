@@ -1,91 +1,86 @@
 '''
-AZMP reporting - Air temperature from Colbourne's Excel sheets
-(script ran in /home/cyrf0006/AZMP/annual_meetings/2019)
+PLot Cartwright air temperature used for regional IROC presentation in the WGOH meeting
 
-Using data from (see ~/research/PeopleStuff/ColbourneStuff):
-AZMP_AIR_TEMP_COMPOSITE_2018.xlsx
-Fred built:
-AZMP_AIR_TEMP_COMPOSITE_BONAVISTA.xlsx
-AZMP_AIR_TEMP_COMPOSITE_CARTWRIGHT.xlsx
-AZMP_AIR_TEMP_COMPOSITE_IQALUIT.xlsx
-AZMP_AIR_TEMP_COMPOSITE_NUUK.xlsx
-AZMP_AIR_TEMP_COMPOSITE_STJOHNS.xlsx
-that are loaded and plotted here. 
+Frederic.Cyr@dfo-mpo.gc.ca - March 2023
 
-Ideally, I would use directly data from EC  Homogenized Temperature: ftp://ccrp.tor.ec.gc.ca/pub/AHCCD/Homog_monthly_mean_temp.zip
-
-but since some data are delayed or unavailable for NL stations (NUUK is in Greenland, Bonavista N/A and Cartwright stops in 2015), Eugne used to got them from :
-http://climate.weather.gc.ca/prods_servs/cdn_climate_summary_e.html
-http://climate.weather.gc.ca/prods_servs/cdn_climate_summary_report_e.html?intYear=2018&intMonth=2&prov=NL&dataFormat=csv&btnSubmit=Download+data
-
-and update the Excel files.
-
-Eventually, I could find a way to update directly from server (see azmp_airTemp.py).
-
-Frederic.Cyr@dfo-mpo.gc.ca - February 2019
-
-** Note from April 2021 **
-This script is now deprecated.
-See iroc_annual_update.py instead.
 
 '''
-
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
-import gsw
-from seawater import extras as swx
 import matplotlib.dates as mdates
 from scipy.interpolate import griddata
-import os
 
 # Adjust fontsize/weight
-font = {'family' : 'normal',
-        'weight' : 'bold',
+font = {'family' : 'sans-serif',
+        'weight' : 'normal',
         'size'   : 14}
 plt.rc('font', **font)
 
-clim_year = [1981, 2010]
-current_year = 2018
+   
+clim_year = [1991, 2020]
+current_year = 2022
 
-## ----  Prepare the data ---- ##
-# load from Excel sheets
-df = pd.read_excel('/home/cyrf0006/research/PeopleStuff/ColbourneStuff/AZMP_AIR_TEMP_COMPOSITE_CARTWRIGHT.xlsx', header=0)
+## ---- Monthly anomalies for current year ---- ##
+air_monthly = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/airTemp/airT_monthly.pkl')
+df = air_monthly[['Cartwright']]
+df_clim_period = df[(df.index.year>=clim_year[0]) & (df.index.year<=clim_year[1])]
+df_monthly_stack = df_clim_period.groupby([(df_clim_period.index.year),(df_clim_period.index.month)]).mean()
+df_monthly_clim = df_monthly_stack.groupby(level=1).mean()
+df_monthly_std = df_monthly_stack.groupby(level=1).std()
 
-# Rename columns
-col_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-df.columns = col_names
+df_current_year = df[df.index.year==current_year]
+year_index = df_current_year.index # backup index
+df_current_year.index=df_monthly_std.index # reset index
+anom = df_current_year - df_monthly_clim
+std_anom = (df_current_year - df_monthly_clim)/df_monthly_std
+#std_anom.index = year_index.month # replace index
+std_anom.index = year_index.strftime('%b') # replace index (by text)
+anom.index = year_index.strftime('%b') # replace index (by text)
 
-# Stack months under Years (pretty cool!)
-df = df.stack() 
 
-# Transform to a series with values based the 15th of each month (had to convert years to string)
-df.index = pd.to_datetime('15-' + df.index.get_level_values(1) + '-' + df.index.get_level_values(0).values.astype(np.str))
+## ---- Annual anomalies (load fromm climate index) ---- ##
+air = pd.read_pickle('/home/cyrf0006/AZMP/state_reports/airTemp/airT_std_anom.pkl')
+air.index.name='Year'
+air = air[['Cartwright']]
+air = air.loc[air.index>=1930]
 
-## ---- Annual anomalies ---- ##
-df_annual = df.resample('As').mean()
-#df_annual = df_annual[df_annual.index.year>=1950]
-clim = df_annual[(df_annual.index.year>=clim_year[0]) & (df_annual.index.year<=clim_year[1])].mean()
-std = df_annual[(df_annual.index.year>=clim_year[0]) & (df_annual.index.year<=clim_year[1])].std()
-anom_annual = df_annual - clim
-anom_annual.index = anom_annual.index.year
-std_anom_annual = (df_annual - clim)/std
-std_anom_annual.index = std_anom_annual.index.year
 
-# Save
-anom_annual.to_csv('iroq_airT_Cartwright.csv', sep=',', float_format='%.2f')
+## ---- Plots ---- ##
 
-# Compare plots
-df_orig = pd.read_csv('/home/cyrf0006/research/WGOH/IROC/2018_update/Newf_Cartwright_Air_Timeseries.csv', header=11)
-df_old = pd.read_csv('/home/cyrf0006/research/WGOH/IROC/2018_update/Newf_Cartwright_Air_Timeseries.csv', header=11)
-df_orig.set_index(['Decimal Year'], inplace=True)
-df_old.set_index(['Decimal Year'], inplace=True)
+## Monthly Barplot
+ax = anom.plot(kind='bar', color='slategray', zorder=10)
+plt.grid('on')
+ax.set_ylabel(r'[$^{\circ}$C]')
+ax.set_title(np.str(current_year) + ' Air temperature anomalies')
+plt.ylim([-4, 4])
+fig = ax.get_figure()
+fig.set_size_inches(w=9,h=6)
+fig_name = 'Cartwright_' + str(current_year) + '.png'
+fig.savefig(fig_name, dpi=300)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)
 
-# Compare plots
-ax = df_orig['Temperature Anomaly \xb0C'].plot()
-df_old['Temperature Anomaly \xb0C'].plot(ax=ax)
-ax.set_ylabel(r'$\rm Temperature anomaly (^{\circ}C)$', fontWeight = 'bold')
-plt.legend(['New way', 'Old way'])
-plt.savefig('compare_AirTemp.png', dpi=150)
-plt.close()
+
+## Annual Barplot
+df1 = air[air>0]
+df2 = air[air<0]
+
+fig = plt.figure(1)
+fig.clf()
+width = .9
+p1 = plt.bar(df1.index, np.squeeze(df1.values), width, alpha=0.8, color='indianred', zorder=10)
+p2 = plt.bar(df2.index, np.squeeze(df2.values), width, bottom=0, alpha=0.8, color='steelblue', zorder=10)
+plt.ylabel('Standardized anomaly')
+plt.title('Cartwright - Annual air temperature')
+ticks = plt.gca().xaxis.get_ticklocs()
+plt.fill_between([ticks[0]-1, ticks[-1]+1], [-.5, -.5], [.5, .5], facecolor='gray', alpha=.2)
+plt.xlim([1932, 2023])
+plt.ylim([-3.2, 3.2])
+plt.grid()
+# Save Figure
+fig.set_size_inches(w=15,h=9)
+fig_name = 'Cartwright_annual_stdanom.png'
+fig.savefig(fig_name, dpi=300)
+os.system('convert -trim ' + fig_name + ' ' + fig_name)
